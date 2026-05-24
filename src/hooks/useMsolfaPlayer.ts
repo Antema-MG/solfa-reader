@@ -1,0 +1,257 @@
+import { useState, useRef, useCallback, useEffect } from 'react'
+import type { MsolfaPlayerState, Voice, Timbre, Status, Score, NoteEvent } from '../types'
+import { parseMsolfa }  from '../lib/parser'
+import { AudioEngine }  from '../lib/audioEngine'
+import { degreeToMidi, midiToFreq, VOICE_BASE_OCTAVE } from '../lib/pitch'
+import { DEFAULT_PIECE } from '../lib/defaults'
+
+const VOICES: Voice[] = ['S', 'A', 'T', 'B']
+const LOOK = 0.06   // audio lookahead in seconds
+
+export function useMsolfaPlayer(): MsolfaPlayerState {
+  // ── React state (drives UI) ────────────────────────────────
+  const [score,       setScore]      = useState<Score | null>(null)
+  const [error,       setError]      = useState<string | null>(null)
+  const [status,      setStatus]     = useState<Status>('stopped')
+  const [tempo,       setTempoVal]   = useState(80)
+  const [tonic,       setTonicVal]   = useState('G')
+  const [timbre,      setTimbreVal]  = useState<Timbre>('organ')
+  const [muted,       setMuted]      = useState<Record<Voice, boolean>>({ S:false, A:false, T:false, B:false })
+  const [solo,        setSolo]       = useState<Set<Voice>>(new Set())
+  const [currentBeat, setCurrentBeat] = useState(0)
+  const [litMidis,    setLitMidis]   = useState<Partial<Record<Voice, number>>>({})
+
+  // ── Refs (for scheduling — no re-render needed) ───────────
+  const engineRef        = useRef(new AudioEngine())
+  const scoreRef         = useRef<Score | null>(null)
+  const statusRef        = useRef<Status>('stopped')
+  const tempoRef         = useRef(80)
+  const tonicRef         = useRef('G')
+  const mutedRef         = useRef<Record<Voice, boolean>>({ S:false, A:false, T:false, B:false })
+  const soloRef          = useRef<Set<Voice>>(new Set())
+  const playStartBeatRef = useRef(0)
+  const startCtxTimeRef  = useRef(0)
+  const currentBeatRef   = useRef(0)
+  const loopStartRef     = useRef<number | null>(null)
+  const loopEndRef       = useRef<number | null>(null)
+  const rafRef           = useRef(0)
+
+  // ── Helpers ───────────────────────────────────────────────
+  const isAudible = useCallback((v: string): boolean => {
+    if (soloRef.current.size > 0) return soloRef.current.has(v as Voice)
+    return !mutedRef.current[v as Voice]
+  }, [])
+
+  const secondsPerBeat = useCallback(() => 60 / tempoRef.current, [])
+
+  const getPosition = useCallback((): number => {
+    const file = scoreRef.current
+    if (!file) return 0
+    if (statusRef.current === 'stopped') return currentBeatRef.current
+    const elapsed = engineRef.current.currentTime - startCtxTimeRef.current
+    const pos = playStartBeatRef.current + elapsed / secondsPerBeat()
+    return Math.max(0, Math.min(file.totalBeats, pos))
+  }, [secondsPerBeat])
+
+  const computeLitMidis = useCallback((beatIndex: number): Partial<Record<Voice, number>> => {
+    const file = scoreRef.current
+    if (!file) return {}
+    const snd: Partial<Record<Voice, NoteEvent>> = {}
+    file.events.forEach(ev => {
+      if (ev.start <= beatIndex && beatIndex < ev.start + ev.durBeats)
+        if (!snd[ev.voice] || ev.start > snd[ev.voice]!.start) snd[ev.voice] = ev
+    })
+    const midis: Partial<Record<Voice, number>> = {}
+    VOICES.forEach(v => {
+      const ev = snd[v]
+      if (!ev || !isAudible(v)) return
+      let midi = degreeToMidi(ev.degree, ev.octave, ev.chromatic, tonicRef.current, VOICE_BASE_OCTAVE[v])
+      if (v === 'T') { while (midi < 48) midi += 12 }   // tenor display: bump above C3
+      midis[v] = midi
+    })
+    return midis
+  }, [isAudible])
+
+  const scheduleFrom = useCallback((posBeats: number) => {
+    const engine = engineRef.current
+    const file   = scoreRef.current
+    if (!file) return
+    engine.stopAll()
+    const spb    = secondsPerBeat()
+    const base   = engine.currentTime + LOOK
+    startCtxTimeRef.current  = base
+    playStartBeatRef.current = posBeats
+    const upper = loopEndRef.current ?? file.totalBeats
+
+    file.events.forEach(ev => {
+      const evEnd = ev.start + ev.durBeats
+      if (evEnd <= posBeats || ev.start >= upper) return
+      const effStart = Math.max(ev.start, posBeats)
+      const effEnd   = Math.min(evEnd, upper)
+      const durSec   = (effEnd - effStart) * spb
+      if (durSec <= 0) return
+      const midi = degreeToMidi(ev.degree, ev.octave, ev.chromatic, tonicRef.current, VOICE_BASE_OCTAVE[ev.voice])
+      engine.scheduleNote(ev.voice, midiToFreq(midi), base + (effStart - posBeats) * spb, durSec)
+    })
+  }, [secondsPerBeat])
+
+  // ── Animation loop ─────────────────────────────────────────
+  useEffect(() => {
+    let lastBi = -1
+    const tick = () => {
+      if (statusRef.current === 'playing') {
+        const pos = getPosition()
+        const bi  = Math.floor(pos)
+        if (bi !== lastBi) {
+          lastBi = bi
+          setCurrentBeat(pos)
+          setLitMidis(computeLitMidis(bi))
+        }
+        const file = scoreRef.current
+        if (file) {
+          if (loopEndRef.current != null && pos >= loopEndRef.current) {
+            scheduleFrom(loopStartRef.current ?? 0)
+          } else if (pos >= file.totalBeats) {
+            engineRef.current.stopAll()
+            statusRef.current = 'stopped'
+            setStatus('stopped')
+            currentBeatRef.current = 0
+            setCurrentBeat(0)
+            setLitMidis({})
+            lastBi = -1
+          }
+        }
+      }
+      rafRef.current = requestAnimationFrame(tick)
+    }
+    rafRef.current = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(rafRef.current)
+  }, [getPosition, computeLitMidis, scheduleFrom])
+
+  // ── Load DEFAULT_PIECE on mount ────────────────────────────
+  useEffect(() => {
+    const result = parseMsolfa(DEFAULT_PIECE)
+    if (result.success) {
+      scoreRef.current = result.file
+      setScore(result.file)
+      tempoRef.current = result.file.metadata.tempo
+      setTempoVal(result.file.metadata.tempo)
+      tonicRef.current = result.file.metadata.key
+      setTonicVal(result.file.metadata.key)
+    }
+  }, [])
+
+  // ── Actions ───────────────────────────────────────────────
+  const openFile = useCallback((text: string) => {
+    engineRef.current.stopAll()
+    statusRef.current = 'stopped'; setStatus('stopped')
+    currentBeatRef.current = 0;    setCurrentBeat(0)
+    loopStartRef.current = null;   loopEndRef.current = null
+    const result = parseMsolfa(text)
+    if (!result.success) {
+      scoreRef.current = null; setScore(null)
+      setError(result.errors.map(e => `${e.line ? 'L' + e.line + ' : ' : ''}${e.message}`).join('\n'))
+      return
+    }
+    setError(null)
+    scoreRef.current = result.file; setScore(result.file)
+    tempoRef.current = result.file.metadata.tempo; setTempoVal(result.file.metadata.tempo)
+    tonicRef.current = result.file.metadata.key;   setTonicVal(result.file.metadata.key)
+    mutedRef.current = { S:false, A:false, T:false, B:false }; setMuted({ S:false, A:false, T:false, B:false })
+    soloRef.current  = new Set(); setSolo(new Set())
+    setLitMidis({})
+  }, [])
+
+  const play = useCallback(() => {
+    const file = scoreRef.current
+    if (!file) return
+    const engine = engineRef.current
+    engine.ensure()
+    if (statusRef.current === 'paused') {
+      engine.resume()
+      statusRef.current = 'playing'; setStatus('playing')
+      return
+    }
+    let pos = currentBeatRef.current
+    if (pos >= file.totalBeats) pos = 0
+    if (loopStartRef.current != null && (pos < loopStartRef.current || pos >= (loopEndRef.current ?? Infinity)))
+      pos = loopStartRef.current
+    engine.resume()
+    engine.applyVoiceGains(isAudible)
+    scheduleFrom(pos)
+    statusRef.current = 'playing'; setStatus('playing')
+  }, [isAudible, scheduleFrom])
+
+  const pause = useCallback(() => {
+    if (statusRef.current !== 'playing') return
+    currentBeatRef.current = getPosition()
+    engineRef.current.suspend()
+    statusRef.current = 'paused'; setStatus('paused')
+  }, [getPosition])
+
+  const stop = useCallback(() => {
+    engineRef.current.stopAll()
+    statusRef.current = 'stopped'; setStatus('stopped')
+    currentBeatRef.current = loopStartRef.current ?? 0
+    setCurrentBeat(currentBeatRef.current)
+    setLitMidis({})
+  }, [])
+
+  const seekTo = useCallback((posBeats: number) => {
+    const file = scoreRef.current
+    if (!file) return
+    posBeats = Math.max(0, Math.min(file.totalBeats, posBeats))
+    currentBeatRef.current = posBeats
+    if (statusRef.current === 'playing') {
+      scheduleFrom(posBeats)
+    } else {
+      setCurrentBeat(posBeats)
+      setLitMidis(computeLitMidis(Math.floor(posBeats)))
+    }
+  }, [scheduleFrom, computeLitMidis])
+
+  const setTempo = useCallback((bpm: number) => {
+    tempoRef.current = bpm; setTempoVal(bpm)
+    if (statusRef.current === 'playing') scheduleFrom(getPosition())
+  }, [scheduleFrom, getPosition])
+
+  const setTonic = useCallback((key: string) => {
+    tonicRef.current = key; setTonicVal(key)
+    if (statusRef.current === 'playing') scheduleFrom(getPosition())
+    setLitMidis(computeLitMidis(Math.floor(getPosition())))
+  }, [scheduleFrom, getPosition, computeLitMidis])
+
+  const setTimbre = useCallback((t: Timbre) => {
+    engineRef.current.timbre = t; setTimbreVal(t)
+    if (statusRef.current === 'playing') scheduleFrom(getPosition())
+  }, [scheduleFrom, getPosition])
+
+  const toggleMute = useCallback((v: Voice) => {
+    const next = { ...mutedRef.current, [v]: !mutedRef.current[v] }
+    mutedRef.current = next; setMuted({ ...next })
+    engineRef.current.applyVoiceGains(isAudible)
+    setLitMidis(computeLitMidis(Math.floor(currentBeatRef.current)))
+  }, [isAudible, computeLitMidis])
+
+  const toggleSolo = useCallback((v: Voice) => {
+    const next = new Set(soloRef.current)
+    next.has(v) ? next.delete(v) : next.add(v)
+    soloRef.current = next; setSolo(new Set(next))
+    engineRef.current.applyVoiceGains(isAudible)
+    setLitMidis(computeLitMidis(Math.floor(currentBeatRef.current)))
+  }, [isAudible, computeLitMidis])
+
+  const clearSelection = useCallback(() => {
+    loopStartRef.current = null; loopEndRef.current = null
+  }, [])
+
+  return {
+    score, error, status,
+    isPlaying: status === 'playing',
+    tempo, tonic, timbre, muted, solo,
+    currentBeat, litMidis,
+    openFile, play, pause, stop, seekTo,
+    setTempo, setTonic, setTimbre,
+    toggleMute, toggleSolo, clearSelection,
+  }
+}

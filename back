@@ -1,0 +1,328 @@
+# Description exhaustive et maximale du projet M-Solfa
+
+---
+
+## PARTIE 1 : LE FORMAT SOURCE `.msolfa`
+
+### 1.1 Structure générale d'un fichier
+
+Un fichier `.msolfa` est un fichier texte pur, structuré en deux grandes parties : l'en-tête de métadonnées, puis le corps musical. L'ordre est strict : les métadonnées d'abord, le corps ensuite. Aucune ligne de corps musical ne peut précéder les métadonnées.
+
+---
+
+### 1.2 L'en-tête : les métadonnées
+
+Chaque ligne de l'en-tête suit le format `Clé: Valeur`. Les clés reconnues sont :
+
+**`Key`** : La tonalité de base du morceau, exprimée en note majeure anglaise. Exemples : `G` pour Sol majeur, `D` pour Ré majeur, `C` pour Do majeur. Cette valeur est le point de référence absolu pour la transposition. Tous les degrés solfa sont calculés relativement à cette tonique de base.
+
+**`Mesure`** : Le chiffrage métrique. Exemples : `6/4`, `3/4`, `4/4`. Le numérateur indique le nombre de temps par mesure complète. Le dénominateur indique la valeur de référence d'un temps. C'est la valeur du numérateur qui pilote le parser : en `6/4`, une mesure complète = 6 temps. En `3/4`, = 3 temps.
+
+**`Titre`** : Le nom du morceau, chaîne de texte libre.
+
+**`Compositeur`** : Le nom de l'auteur, chaîne de texte libre.
+
+**`Tempo`** : La vitesse initiale d'exécution exprimée en BPM. Exemple : `80 BPM`. Cette valeur est modifiable en temps réel par l'utilisateur mais la valeur du fichier est la valeur par défaut au chargement.
+
+---
+
+### 1.3 Le corps musical : structure par blocs
+
+Le corps est divisé en blocs logiques séparés par des commentaires de repère temporel.
+
+**Les commentaires de repère** : Lignes de la forme `// Mesure X` ou `// Mesures X & Y`. Ce sont des repères de navigation humaine, pas des compteurs stricts de barres. Ils indiquent approximativement quelles mesures musicales sont contenues dans le bloc qui suit. Le parser les lit pour afficher des repères dans l'interface mais ne s'appuie pas dessus pour compter les temps.
+
+**Les 4 lignes de voix** : Chaque bloc contient obligatoirement 4 lignes, une par voix, identifiées par leur préfixe :
+- `S.` : Soprano
+- `A.` : Alto
+- `T.` : Ténor
+- `B.` : Basse
+
+Chaque ligne de voix commence par son identifiant suivi d'un espace, puis d'une séquence de blocs métriques.
+
+---
+
+### 1.4 La grammaire des blocs métriques
+
+**Le délimiteur `|`** : La barre verticale délimite visuellement un groupe de temps. Deux `|` consécutifs encadrent un groupe. Ce groupe ne représente pas nécessairement une mesure complète — il représente un groupe visuel de N temps. Le parser accumule les groupes successifs jusqu'à atteindre le total métrique déclaré par `Mesure`.
+
+Exemple concret : en `6/4`, deux groupes de 3 temps forment une mesure complète :
+```
+| m : r : d | s : - : - |
+  groupe 1    groupe 2
+  3 temps     3 temps
+  = 1 mesure complète de 6 temps
+```
+
+**Le délimiteur `:`** : Sépare les temps à l'intérieur d'un groupe. Le nombre de temps dans un groupe = nombre de `:` + 1. Exemple : `m : r : d` contient 3 temps.
+
+**Règle fondamentale** : Entre deux `|`, tous les éléments séparés par `:` doivent être des valeurs rythmiques valides. Le total de ces valeurs doit être un entier de temps. Le parser additionne les groupes jusqu'à atteindre le total de la mesure.
+
+---
+
+### 1.5 Les symboles rythmiques en détail
+
+**Note isolée** : Une lettre de degré seule entre deux séparateurs. Vaut exactement `1.0` temps. Exemples : `m`, `r`, `d`, `s`, `l`, `t`, `f`.
+
+**Tiret `-`** : Prolongation. La note précédente est tenue pendant ce temps. Vaut `1.0` temps. Le `-` ne crée pas de nouvelle attaque sonore, il prolonge l'enveloppe de la note précédente.
+
+**Zéro `0` ou underscore `_`** : Silence complet. Vaut `1.0` temps. Aucun son n'est émis pendant ce temps, les oscillateurs actifs sont coupés pour cette voix.
+
+**Point entre deux notes `s.f`** : Divise le temps en deux croches strictement égales. La première note est jouée sur la première moitié du temps (0.5), la seconde note est attaquée sur la seconde moitié du temps (0.5). Total = `1.0` temps.
+
+**Point après une note `d.`** : Note pointée. La note est attaquée sur la première moitié du temps puis tenue sur la seconde moitié. Pas de nouvelle attaque. Total = `1.0` temps. Différence avec `d -` : `d.` est contenu dans un seul temps, tandis que `d : -` représente deux temps séparés.
+
+---
+
+### 1.6 Les hauteurs : degrés et modificateurs d'octave
+
+**Les 7 degrés de base** : `d` (Do), `r` (Ré), `m` (Mi), `f` (Fa), `s` (Sol), `l` (La), `t` (Si). Ces lettres représentent les degrés relatifs de la gamme majeure, pas des notes absolues. Leur hauteur réelle dépend de la tonique active.
+
+**Modificateur aigu `'`** : Apostrophe immédiatement après la note, sans espace. Monte d'une octave. Exemple : `d'` est le Do une octave au-dessus du Do de référence.
+
+**Modificateur grave `,`** : Virgule immédiatement après la note, sans espace. Descend d'une octave. Exemple : `s,` est le Sol une octave en dessous du Sol de référence.
+
+**Double modificateur `''` et `,,`** : Double apostrophe ou double virgule. Monte ou descend de deux octaves.
+
+**Notes chromatiques altérées** : Notées avec le suffixe `i` pour indiquer un demi-ton haut (sharp) :
+- `di` : Do dièse
+- `ri` : Ré dièse
+- `fi` : Fa dièse
+- `si` : Sol dièse (attention : ne pas confondre avec `s` = Sol naturel)
+
+Les bémols ne sont pas explicitement notés dans le format — ils sont gérés implicitement par la tonalité active lors de la transposition.
+
+---
+
+### 1.7 L'algorithme de validation du parser
+
+Étape 1 : Lecture des métadonnées. Extraction de `Key`, `Mesure`, `Tempo`, `Titre`, `Compositeur`. Si une métadonnée obligatoire manque, erreur bloquante immédiate.
+
+Étape 2 : Décomposition du corps en blocs. Identification des commentaires de repère. Regroupement des 4 lignes de voix par bloc.
+
+Étape 3 : Pour chaque ligne de voix, extraction des groupes `|...|`. Décompte des temps dans chaque groupe en analysant les `:` et les symboles rythmiques.
+
+Étape 4 : Accumulation des groupes pour reconstituer les mesures complètes. Un groupe de 3 temps + un groupe de 3 temps = 1 mesure de 6/4.
+
+Étape 5 : Vérification de la cohérence inter-voix. Pour chaque mesure reconstituée, toutes les 4 voix doivent avoir exactement le même nombre de temps. Si une voix a 5.5 temps là où les autres en ont 6, erreur bloquante avec message précis : voix concernée, numéro de mesure, total reçu, total attendu.
+
+Étape 6 : Si toutes les mesures sont valides, construction de la structure de données interne (tableau d'événements horodatés par voix) prête à être consommée par le moteur audio et le module visuel.
+
+---
+
+## PARTIE 2 : LE MOTEUR AUDIO
+
+### 2.1 Architecture générale
+
+Le moteur audio repose exclusivement sur la Web Audio API native du navigateur. Il n'utilise aucun fichier son externe, aucune banque d'échantillons, aucune requête réseau. Tout le son est calculé mathématiquement en temps réel par le processeur du client.
+
+Le moteur maintient un `AudioContext` unique pour toute la session. Chaque voix (S, A, T, B) possède sa propre chaîne de traitement audio indépendante avec ses propres nœuds.
+
+---
+
+### 2.2 Chaîne de traitement par voix
+
+Pour chaque voix, la chaîne est :
+
+**Oscillateur(s)** → **Nœud de Gain (enveloppe ADSR)** → **Filtre (optionnel selon timbre)** → **Nœud de Volume de voix (mute/solo)** → **Nœud de Volume global** → **Destination (haut-parleurs)**
+
+L'oscillateur est le générateur de signal de base. Le nœud de gain applique l'enveloppe temporelle. Le filtre colore le son. Le nœud de volume de voix gère le mute et le solo. Le nœud de volume global gère le volume général.
+
+---
+
+### 2.3 Calcul des fréquences
+
+Chaque degré solfa est converti en fréquence absolue en Hz selon la formule :
+
+1. Identification de la tonique active (tonique de base du fichier + transposition utilisateur).
+2. Calcul de l'intervalle en demi-tons du degré solfa dans la gamme majeure : `d=0, r=2, m=4, f=5, s=7, l=9, t=11`.
+3. Pour les notes chromatiques : `di=1, ri=3, fi=6, si=8`.
+4. Application du modificateur d'octave : `+12` demi-tons par `'`, `-12` par `,`.
+5. Calcul de la fréquence : `f = 440 * 2^((n - 69) / 12)` où `n` est le numéro MIDI de la note.
+
+---
+
+### 2.4 Les 4 timbres en détail
+
+**Orgue** : Superposition de 5 oscillateurs sinusoïdaux par voix, accordés sur les harmoniques naturelles (fondamentale, octave, quinte, double octave, tierce). Les amplitudes relatives de ces harmoniques reproduisent le spectre d'un orgue à tuyaux. L'enveloppe ADSR a une attaque douce (Attack ~20ms), pas de Decay significatif, un Sustain à niveau plein, et une chute douce (Release ~50ms). Le son est continu tant que la note est tenue.
+
+**Piano** : Un seul oscillateur sinusoïdal ou triangulaire par voix. Enveloppe percussive : attaque quasi-instantanée (Attack ~5ms), Decay rapide (50-100ms), Sustain très bas ou nul, Release court. La note s'éteint naturellement même si elle est théoriquement tenue — comportement naturel du piano acoustique.
+
+**Cordes** : Oscillateur sinusoïdal ou en dents de scie, filtré passe-bas pour enlever les harmoniques aigus et obtenir une chaleur de corde. Attaque lente (Attack ~150-200ms) simulant le coup d'archet progressif. Sustain plein. Release moyen (~100ms).
+
+**Cuivres** : Onde carrée (square wave) filtrée passe-bas pour adoucir les harmoniques trop agressives de l'onde carrée brute. Attaque moyenne (~30ms). Sustain plein. Release court. L'onde carrée naturellement riche en harmoniques impairs donne le timbre chaud et légèrement nasillard des cuivres.
+
+---
+
+### 2.5 Gestion du tempo et de la synchronisation
+
+Le moteur utilise le `currentTime` de l'`AudioContext` comme horloge maître absolue et précise. Cette horloge n'est pas affectée par les irrégularités du thread JavaScript.
+
+Au démarrage de la lecture, le moteur calcule le timestamp absolu de chaque note à jouer pour chaque voix, en transformant les positions temporelles (mesure, temps, sous-temps) en secondes selon la formule : `t_secondes = (position_en_temps / BPM) * 60`.
+
+Chaque note est schedulée à l'avance via `oscillatorNode.start(audioContext.currentTime + offset)` et `oscillatorNode.stop(...)`. Cette approche garantit une synchronisation parfaite sans drift même sur des morceaux longs.
+
+Quand le tempo change en cours de lecture, le moteur recalcule les offsets restants à partir de la position courante.
+
+---
+
+### 2.6 Gestion du mute et du solo
+
+**Mute** : Le nœud de gain de la voix concernée est mis à zéro immédiatement. L'oscillateur continue de tourner pour maintenir la synchronisation mais n'émet aucun son.
+
+**Solo** : Toutes les voix non-solos ont leur gain mis à zéro. La ou les voix en solo gardent leur gain normal.
+
+**Désactivation** : Le gain est restauré à sa valeur nominale.
+
+Ces changements sont appliqués avec un ramping très court (~5ms) pour éviter les clics audio (discontinuités brutales de signal).
+
+---
+
+## PARTIE 3 : LA TRANSPOSITION
+
+### 3.1 Logique de transposition
+
+La transposition est un décalage de la tonique de référence. Si le fichier déclare `Key: G` et que l'utilisateur choisit la tonique Ré (`D`), le décalage est de `+7` demi-tons (Sol → Ré = 7 demi-tons dans le sens montant ou -5 dans le sens descendant, selon l'algorithme de chemin le plus court).
+
+Ce décalage est appliqué uniformément à toutes les notes de toutes les voix au moment du calcul des fréquences. Il n'y a aucun changement dans le fichier source, la transposition est purement à l'exécution.
+
+### 3.2 Affichage de la transposition
+
+L'interface indique en permanence la tonalité active. Si `Key: G` et transposition vers Ré, l'affichage indique `Clé de Ré` ou `Do → D`. Les noms réels des notes dans le bandeau d'aide du piano sont calculés dans cette tonalité transposée.
+
+---
+
+## PARTIE 4 : L'INTERFACE — SECTION CONFIGURATION (HAUT)
+
+### 4.1 Sélecteur de timbre
+
+Quatre options : Orgue, Piano, Cordes, Cuivres. Changement applicable en temps réel. Quand l'utilisateur change de timbre pendant la lecture, les prochaines attaques de notes utilisent le nouveau timbre. Les notes en cours de sustain peuvent continuer avec l'ancien timbre jusqu'à leur fin naturelle, ou être coupées et relancées selon l'implémentation.
+
+### 4.2 Contrôle du tempo
+
+Slider horizontal et/ou champ numérique affichant la valeur en BPM. La plage est typiquement de 20 à 240 BPM. La valeur par défaut est celle du fichier. Changement en temps réel sans interruption de la lecture : le moteur recalcule les timestamps des notes restantes.
+
+### 4.3 Sélecteur de tonique
+
+Menu déroulant ou boutons pour toutes les toniques usuelles : Do (C), Ré (D), Mi (E), Fa (F), Sol (G), La (A), Si (B), Sib (Bb), Mib (Eb), Lab (Ab), Reb (Db), Fa# (F#). Changement applicable immédiatement.
+
+### 4.4 Zone de métadonnées
+
+Affichage permanent et non-interactif du Titre du morceau, du nom du Compositeur, du chiffrage de Mesure, du numéro de la mesure en cours de lecture et du tempo actif. Ces informations sont mises à jour en temps réel pendant la lecture.
+
+### 4.5 Boutons de transport
+
+Lecture, Pause et Stop. Le bouton Lecture démarre ou reprend depuis la position courante. Le bouton Pause gèle la lecture à l'instant précis — le moteur audio est suspendu, les visuels restent dans leur état courant. Le bouton Stop remet tout à zéro : position de lecture au début, surlignage éteint, piano virtuel éteint.
+
+---
+
+## PARTIE 5 : L'INTERFACE — SECTION PARTITION (MILIEU)
+
+### 5.1 Rendu de la partition
+
+La partition est affichée sous forme de texte structuré. Pour chaque bloc de mesures, les 4 lignes de voix sont alignées verticalement. L'alignement est géré de façon à ce que les colonnes de temps correspondent visuellement : le temps 1 de la Soprano est dans la même colonne verticale que le temps 1 de l'Alto, du Ténor et de la Basse.
+
+Les identifiants de voix (`S.`, `A.`, `T.`, `B.`) sont affichés à gauche. Les commentaires de repère (`// Mesure X`) sont affichés comme titres de section.
+
+Les balises techniques internes du format (les mécanismes de parsing) ne sont pas affichées brutes : la partition est rendue de façon propre et lisible.
+
+### 5.2 Surlignage synchronisé en temps réel
+
+Pendant la lecture, la colonne temporelle active est mise en évidence visuellement. Le surlignage avance colonne par colonne au rythme exact du moteur audio — piloté par le `currentTime` de l'`AudioContext` et non par un simple `setInterval` JavaScript qui dériverait.
+
+Le surlignage couvre simultanément les 4 lignes de voix pour le temps actif : si le temps 3 de la mesure 2 est en cours, les 4 éléments de ce temps (un par voix) sont surlignés en même temps.
+
+Pour les croches (`s.f`), le surlignage peut distinguer visuellement les deux sous-temps ou surligner l'élément entier — à définir à l'implémentation.
+
+### 5.3 Barre de progression
+
+Barre horizontale représentant la durée totale du morceau. La position courante de lecture est indiquée par un curseur mobile. L'utilisateur peut cliquer n'importe où sur la barre pour repositionner la tête de lecture. Le moteur audio reprend depuis ce point, recalculant les timestamps à partir de la nouvelle position. Le surlignage visuel se recale immédiatement.
+
+### 5.4 Sélection d'une section
+
+L'utilisateur peut cliquer-glisser sur la partition pour sélectionner une plage de mesures ou de temps. La sélection est mise en évidence visuellement. Quand une sélection est active, la lecture se restreint à cette plage — elle peut soit s'arrêter en fin de sélection, soit boucler sur la sélection. La désélection remet la lecture en mode global.
+
+---
+
+## PARTIE 6 : L'INTERFACE — SECTION PIANO VIRTUEL (BAS)
+
+### 6.1 Structure du clavier
+
+Le clavier couvre 43 touches, du Do2 (C2) au Sol5 (G5). Cette étendue est fixe et ne change pas avec la transposition — c'est l'étendue physique du clavier. En revanche, les touches qui s'illuminent changent selon la transposition active.
+
+Les touches blanches et noires sont rendues graphiquement avec leurs proportions réelles. Les touches noires sont plus courtes et plus étroites, positionnées entre les touches blanches selon la disposition standard du piano.
+
+### 6.2 Illumination des touches
+
+À chaque temps joué, le moteur calcule les 4 notes réelles à afficher (Soprano, Alto, Ténor transposé en main droite, Basse en main gauche) et illumine les touches correspondantes avec leur couleur de voix :
+- Soprano : rouge
+- Alto : bleu
+- Ténor : vert
+- Basse : orange
+
+Une touche peut théoriquement être illuminée par deux voix simultanément si elles jouent la même note — dans ce cas l'affichage doit gérer la superposition des couleurs (dégradé, couleur dominante, ou découpe visuelle de la touche).
+
+### 6.3 La règle du 3+1 en détail
+
+**Main droite — 3 touches actives** :
+
+Le Soprano est placé dans le registre aigu de la main droite. C'est la note la plus haute des 3 touches de droite.
+
+L'Alto est placé au registre médian de la main droite. C'est la note du milieu.
+
+Le Ténor est automatiquement basculé dans le registre médian/inférieur de la main droite. Cela signifie que si le Ténor est par nature dans un registre grave (voix masculine), le système le transpose d'une octave vers le haut pour qu'il soit jouable par le pouce de la main droite, sans chevaucher les notes de la main gauche. Le Ténor devient ainsi la note la plus basse des 3 touches de droite.
+
+**La logique de bascule du Ténor** : Si la note réelle du Ténor tombe dans le registre de la main gauche (en dessous d'un Do3 par exemple), le système la transpose automatiquement à l'octave supérieure pour la ramener dans la zone de la main droite. Ce décalage est purement pour l'affichage pianistique — il n'affecte pas la note jouée par le moteur audio.
+
+**Main gauche — 1 touche active** :
+
+La Basse est toujours une note unique dans le registre grave. La main gauche ne joue jamais un accord, jamais deux touches simultanées. Si la Basse joue un degré `d` en tonalité de Sol, la main gauche illumine uniquement la touche Sol dans le registre grave correspondant.
+
+### 6.4 Mode apprentissage en pause
+
+Quand l'utilisateur met le morceau en Pause et clique sur un temps précis dans la partition, le moteur audio ne joue rien mais le clavier de piano illumine et maintient allumées les 4 touches correspondantes (3 droite + 1 gauche). Les touches restent allumées indéfiniment jusqu'à ce que l'utilisateur clique sur un autre temps, reprenne la lecture, ou appuie sur Stop. Cela permet à l'utilisateur de poser physiquement ses mains sur un vrai clavier en regardant la disposition.
+
+### 6.5 Le bandeau d'aide textuelle
+
+Zone de texte positionnée juste au-dessus du clavier graphique. Elle affiche en clair et en temps réel les noms absolus des notes à jouer dans la tonalité active. Format exact :
+
+`Main Gauche (1 doigt) : [ Sol ]  |  Main Droite (3 doigts) : [ Mi - Do - Sol ]`
+
+Les noms sont ceux de la tonalité transposée — si on est en Ré majeur, on voit des noms avec dièses ou bémols selon la gamme de Ré. Le bandeau se met à jour à chaque nouveau temps pendant la lecture, et reste figé sur le dernier temps cliqué en mode pause.
+
+### 6.6 Filtre Solo sur le piano
+
+Si une voix est en mode Solo, seules les touches de cette voix s'illuminent. Exemple : Solo Alto → seules les touches bleues apparaissent. Les touches des autres voix (rouge, vert, orange) restent éteintes même si ces voix jouent des notes. Le bandeau d'aide ne mentionne que la/les voix solos actives.
+
+---
+
+## PARTIE 7 : SYNCHRONISATION GLOBALE ET GESTION D'ÉTATS
+
+### 7.1 L'état global de l'application
+
+L'application maintient un objet d'état central contenant à tout moment :
+- La position de lecture courante (mesure + temps + sous-temps)
+- L'état de lecture (en lecture / en pause / stoppé)
+- Le tempo actif
+- La tonique active
+- Le timbre actif
+- L'état mute/solo de chaque voix
+- La sélection de section active (si présente)
+- Les données parsées du fichier `.msolfa` actif
+
+Tous les modules (moteur audio, partition, piano virtuel, bandeau d'aide) sont des consommateurs de cet état. Quand l'état change, tous les modules se mettent à jour de façon cohérente.
+
+### 7.2 La boucle de mise à jour visuelle
+
+Une boucle `requestAnimationFrame` tourne en permanence pendant la lecture. À chaque frame, elle lit le `currentTime` de l'`AudioContext`, calcule la position musicale courante (mesure/temps) et met à jour :
+- Le surlignage dans la partition
+- L'illumination du piano virtuel
+- Le bandeau d'aide
+- Le curseur de la barre de progression
+- Le numéro de mesure dans la zone de métadonnées
+
+Cette boucle est découplée du scheduling audio — l'audio est schedulé à l'avance, le visuel est mis à jour frame par frame en lisant l'horloge audio. Cela garantit que le visuel est toujours parfaitement aligné sur le son sans jamais le précéder ni le retarder.
+
+### 7.3 Chargement d'un fichier
+
+L'utilisateur charge un fichier `.msolfa` via un input de fichier ou un drag-and-drop. Le contenu textuel est lu, transmis au parser. Si le parser valide le fichier, l'état global est mis à jour avec les nouvelles données et l'interface se réinitialise. Si le parser lève une erreur, un message d'erreur précis est affiché et l'ancien morceau reste actif.

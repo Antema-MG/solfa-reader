@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>M-Solfa — Spécification Complète</title>
+<style>
+:root {
+  --bg: #0d0d0f;
+  --bg2: #141417;
+  --bg3: #1a1a1f;
+  --border: rgba(255,255,255,0.08);
+  --border2: rgba(255,255,255,0.14);
+  --text: #e8e6e0;
+  --text2: #9a9890;
+  --text3: #5e5c58;
+  --accent: #c8a96e;
+  --accent2: #7e9fc8;
+  --red: #e05b5b;
+  --blue: #5b8fe0;
+  --green: #5bc87e;
+  --orange: #e0935b;
+  --purple: #a07ee0;
+  --mono: 'Courier New', monospace;
+  --sans: 'Georgia', serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+/* LAYOUT */
+.page { display: flex; min-height: 100vh; }
+.sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  padding: 24px 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+.main { flex: 1; padding: 48px 56px; max-width: 960px; }
+
+/* SIDEBAR */
+.sidebar-title {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text3);
+  padding: 0 20px 12px;
+}
+.sidebar a {
+  display: block;
+  padding: 5px 20px;
+  font-size: 12px;
+  color: var(--text2);
+  text-decoration: none;
+  border-left: 2px solid transparent;
+  transition: all 0.15s;
+}
+.sidebar a:hover { color: var(--text); border-left-color: var(--accent); }
+.sidebar .section-label {
+  padding: 14px 20px 4px;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text3);
+}
+
+/* TYPOGRAPHY */
+h1 {
+  font-size: 28px;
+  font-weight: normal;
+  color: var(--accent);
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+}
+h2 {
+  font-size: 18px;
+  font-weight: normal;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+  margin: 48px 0 20px;
+}
+h3 {
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--accent);
+  margin: 28px 0 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+p { margin-bottom: 12px; color: var(--text2); }
+strong { color: var(--text); font-weight: bold; }
+
+/* TAGS / BADGES */
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-family: var(--mono);
+  margin-right: 4px;
+}
+.badge-voice-s { background: rgba(224,91,91,0.15); color: var(--red); border: 1px solid rgba(224,91,91,0.3); }
+.badge-voice-a { background: rgba(91,143,224,0.15); color: var(--blue); border: 1px solid rgba(91,143,224,0.3); }
+.badge-voice-t { background: rgba(91,200,126,0.15); color: var(--green); border: 1px solid rgba(91,200,126,0.3); }
+.badge-voice-b { background: rgba(224,147,91,0.15); color: var(--orange); border: 1px solid rgba(224,147,91,0.3); }
+.badge-req { background: rgba(200,169,110,0.12); color: var(--accent); border: 1px solid rgba(200,169,110,0.25); }
+.badge-opt { background: rgba(94,92,88,0.3); color: var(--text3); border: 1px solid var(--border); }
+
+/* CODE BLOCKS */
+pre {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 16px 20px;
+  font-family: var(--mono);
+  font-size: 12px;
+  overflow-x: auto;
+  margin: 12px 0 20px;
+  line-height: 1.6;
+  color: var(--text);
+}
+code {
+  font-family: var(--mono);
+  font-size: 12px;
+  background: rgba(255,255,255,0.06);
+  padding: 1px 5px;
+  border-radius: 3px;
+  color: var(--accent);
+}
+pre code { background: none; padding: 0; color: inherit; }
+
+/* COMMENT in code */
+.cm { color: var(--text3); }
+.kw { color: var(--accent2); }
+.st { color: var(--green); }
+.nm { color: var(--orange); }
+.err { color: var(--red); }
+
+/* TABLES */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0 20px;
+  font-size: 13px;
+}
+th {
+  text-align: left;
+  padding: 8px 12px;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text3);
+  border-bottom: 1px solid var(--border2);
+}
+td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text2);
+  vertical-align: top;
+}
+td:first-child { font-family: var(--mono); font-size: 12px; color: var(--accent); }
+tr:last-child td { border-bottom: none; }
+
+/* FEATURE CARDS */
+.feature-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 16px 0 24px;
+}
+.feature-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px 18px;
+}
+.feature-card .fc-title {
+  font-size: 13px;
+  font-weight: bold;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.feature-card .fc-desc {
+  font-size: 12px;
+  color: var(--text2);
+  line-height: 1.5;
+  margin: 0;
+}
+.feature-card .fc-tag {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 8px;
+}
+
+/* RULE BOX */
+.rule-box {
+  background: rgba(200,169,110,0.05);
+  border: 1px solid rgba(200,169,110,0.2);
+  border-left: 3px solid var(--accent);
+  border-radius: 4px;
+  padding: 12px 16px;
+  margin: 12px 0 20px;
+}
+.rule-box p { margin: 0; font-size: 13px; color: var(--text2); }
+
+/* ERROR BOX */
+.error-box {
+  background: rgba(224,91,91,0.05);
+  border: 1px solid rgba(224,91,91,0.2);
+  border-left: 3px solid var(--red);
+  border-radius: 4px;
+  padding: 12px 16px;
+  margin: 12px 0 20px;
+}
+.error-box p { margin: 0; font-size: 13px; color: #e09090; }
+
+/* LAYOUT DIAGRAM */
+.layout-diagram {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 16px 0 24px;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+.layout-zone {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.layout-zone:last-child { border-bottom: none; }
+.layout-zone .zone-label {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 8px;
+}
+.layout-zone .zone-content {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.zone-item {
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  border: 1px solid var(--border2);
+  color: var(--text2);
+}
+.zone-item.accent { border-color: rgba(200,169,110,0.4); color: var(--accent); background: rgba(200,169,110,0.07); }
+
+/* PIANO DIAGRAM */
+.piano-diagram {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+  margin: 16px 0 24px;
+}
+.piano-keys {
+  display: flex;
+  gap: 3px;
+  align-items: flex-end;
+  justify-content: center;
+  height: 80px;
+  margin-bottom: 16px;
+}
+.white-key {
+  width: 22px;
+  height: 80px;
+  background: #e8e4d8;
+  border: 1px solid #bbb;
+  border-radius: 0 0 3px 3px;
+  position: relative;
+}
+.black-key {
+  width: 14px;
+  height: 50px;
+  background: #1a1a1a;
+  border-radius: 0 0 2px 2px;
+  margin: 0 -8px;
+  z-index: 2;
+  position: relative;
+}
+.key-s { background: var(--red) !important; }
+.key-a { background: var(--blue) !important; }
+.key-t { background: var(--green) !important; }
+.key-b { background: var(--orange) !important; }
+.piano-legend {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  font-size: 11px;
+}
+.piano-legend span { display: flex; align-items: center; gap: 6px; color: var(--text2); }
+.dot { width: 10px; height: 10px; border-radius: 50%; }
+
+/* HAND RULE */
+.hand-rule {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 16px 0 24px;
+}
+.hand-box {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+}
+.hand-box .hand-title {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 12px;
+}
+.hand-note {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+.hand-note:last-child { border-bottom: none; }
+.hand-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+/* STACK TABLE */
+.stack-row {
+  display: grid;
+  grid-template-columns: 140px 1fr 80px;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  align-items: center;
+}
+.stack-row:last-child { border-bottom: none; }
+.stack-layer { color: var(--text3); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; }
+.stack-pkg { font-family: var(--mono); color: var(--accent2); }
+.stack-role { color: var(--text2); }
+.stack-lic { color: var(--green); font-family: var(--mono); font-size: 11px; }
+
+/* SECTION DIVIDER */
+.section-num {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(200,169,110,0.15);
+  border: 1px solid rgba(200,169,110,0.3);
+  text-align: center;
+  line-height: 24px;
+  font-size: 11px;
+  color: var(--accent);
+  margin-right: 8px;
+}
+
+/* ROADMAP */
+.roadmap {
+  border-left: 1px solid var(--border2);
+  padding-left: 24px;
+  margin: 16px 0 24px;
+}
+.road-step {
+  position: relative;
+  margin-bottom: 20px;
+}
+.road-step::before {
+  content: '';
+  position: absolute;
+  left: -29px;
+  top: 5px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--bg3);
+  border: 1px solid var(--accent);
+}
+.road-step .road-title { font-size: 13px; font-weight: bold; color: var(--text); margin-bottom: 4px; }
+.road-step .road-desc { font-size: 12px; color: var(--text2); }
+
+/* HEADER */
+.doc-header {
+  padding-bottom: 32px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0;
+}
+.doc-subtitle { font-size: 13px; color: var(--text3); margin-top: 6px; }
+.doc-meta { display: flex; gap: 16px; margin-top: 16px; font-size: 11px; color: var(--text3); }
+.doc-meta span { display: flex; align-items: center; gap: 4px; }
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-title">M-Solfa Spec</div>
+  <div class="section-label">Format</div>
+  <a href="#format-header">En-tête</a>
+  <a href="#format-body">Corps musical</a>
+  <a href="#format-rhythms">Symboles rythmiques</a>
+  <a href="#format-heights">Hauteurs</a>
+  <a href="#format-rules">Règles de validation</a>
+  <a href="#format-examples">Exemples</a>
+  <div class="section-label">Application</div>
+  <a href="#app-parser">Parser</a>
+  <a href="#app-audio">Moteur audio</a>
+  <a href="#app-ui">Interface</a>
+  <a href="#app-score">Partition</a>
+  <a href="#app-piano">Piano virtuel</a>
+  <a href="#app-controls">Contrôles</a>
+  <div class="section-label">Technique</div>
+  <a href="#tech-stack">Stack</a>
+  <a href="#tech-types">Types TypeScript</a>
+  <a href="#tech-roadmap">Roadmap</a>
+</nav>
+
+<!-- MAIN -->
+<main class="main">
+
+<!-- HEADER -->
+<div class="doc-header">
+  <h1>M-Solfa Player & Visualizer</h1>
+  <p class="doc-subtitle">Spécification complète — Format, Parser, Audio, Interface, Piano Virtuel</p>
+  <div class="doc-meta">
+    <span>Stack : Next.js 14 + TypeScript</span>
+    <span>Usage : Local → SaaS évolutif</span>
+    <span>Audio : Tone.js (synthèse pure)</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2 id="format-header"><span class="section-num">1</span> Format .msolfa — En-tête</h2>
+
+<p>Chaque fichier <code>.msolfa</code> commence par <strong>5 lignes de métadonnées obligatoires</strong>, dans cet ordre exact. Aucune n'est optionnelle. Si l'une manque, le parser refuse le fichier.</p>
+
+<pre><span class="kw">Key</span>: G
+<span class="kw">Mesure</span>: 6/4
+<span class="kw">Titre</span>: Nom du morceau
+<span class="kw">Compositeur</span>: Nom du compositeur
+<span class="kw">Tempo</span>: 80 BPM</pre>
+
+<table>
+  <tr><th>Clé</th><th>Valeur attendue</th><th>Rôle</th></tr>
+  <tr><td>Key</td><td>Lettre majuscule (A–G, Bb, F#…)</td><td>Tonalité de base. Référence pour la transposition.</td></tr>
+  <tr><td>Mesure</td><td>num/denom (ex: 6/4, 3/4, 4/4)</td><td>Le numérateur = nombre de temps par mesure. Pilote le parser.</td></tr>
+  <tr><td>Titre</td><td>Texte libre</td><td>Nom du morceau. Affiché dans l'interface.</td></tr>
+  <tr><td>Compositeur</td><td>Texte libre</td><td>Nom de l'auteur. Affiché dans l'interface.</td></tr>
+  <tr><td>Tempo</td><td>Entier suivi de BPM</td><td>Vitesse initiale. Modifiable en temps réel par l'utilisateur.</td></tr>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2 id="format-body"><span class="section-num">2</span> Format .msolfa — Corps musical</h2>
+
+<p>Après l'en-tête, le corps est structuré en <strong>blocs de mesures</strong>. Chaque bloc commence par un commentaire de repère, suivi de 4 lignes de voix.</p>
+
+<pre><span class="cm">// Mesure 1</span>
+<span class="kw">S.</span> | m : r : d : s : - : - |
+<span class="kw">A.</span> | d : d : d : m : - : - |
+<span class="kw">T.</span> | s : f : m : s : - : - |
+<span class="kw">B.</span> | d : d : d : d : - : - |
+
+<span class="cm">// Mesures 3 & 4</span>
+<span class="kw">S.</span> | s : - : - : - : - : - | s.f : m : s : d' : - : - |
+<span class="kw">A.</span> | d : - : - : - : - : - | m.r : d : m : m  : - : - |
+<span class="kw">T.</span> | m : - : - : - : - : - | s   : s, : s : s  : - : - |
+<span class="kw">B.</span> | d : - : - : - : - : - | d   : d. : d : d  : - : - |</pre>
+
+<h3>Règles structurelles</h3>
+
+<div class="rule-box"><p><strong>Commentaire de repère</strong> — format strict : <code>// Mesure X</code> ou <code>// Mesures X &amp; Y</code>. Ligne seule, rien d'autre. Repère de navigation uniquement, pas utilisé pour compter les temps.</p></div>
+
+<div class="rule-box"><p><strong>4 voix obligatoires par bloc</strong> — dans l'ordre : <code>S.</code> (Soprano) · <code>A.</code> (Alto) · <code>T.</code> (Ténor) · <code>B.</code> (Basse). Si une voix manque, le parser bloque.</p></div>
+
+<div class="rule-box"><p><strong>Délimiteur <code>|</code></strong> — encadre un groupe de temps. Un groupe peut représenter une demi-mesure ou une mesure complète. Le parser accumule les groupes successifs jusqu'à atteindre le total de la mesure (valeur du numérateur de <code>Mesure</code>).</p></div>
+
+<div class="rule-box"><p><strong>Délimiteur <code>:</code></strong> — sépare les temps à l'intérieur d'un groupe. Nombre de temps = nombre de <code>:</code> + 1. En 6/4, deux groupes de 3 temps <code>| t:t:t | t:t:t |</code> forment une mesure complète.</p></div>
+
+<div class="rule-box"><p><strong>Bloc multi-mesures</strong> — une ligne peut contenir plusieurs groupes <code>| ... |</code> côte à côte. Chaque groupe est validé séparément.</p></div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2 id="format-rhythms"><span class="section-num">3</span> Format .msolfa — Symboles rythmiques</h2>
+
+<table>
+  <tr><th>Symbole</th><th>Exemple</th><th>Durée</th><th>Description</th></tr>
+  <tr><td>Note seule</td><td><code>m</code></td><td>1.0 temps</td><td>Attaque + tenue sur tout le temps.</td></tr>
+  <tr><td>Tiret</td><td><code>-</code></td><td>1.0 temps</td><td>Prolongation. Pas de nouvelle attaque. Tenue de la note précédente.</td></tr>
+  <tr><td>Silence</td><td><code>0</code> ou <code>_</code></td><td>1.0 temps</td><td>Silence complet. L'oscillateur est coupé pour ce temps.</td></tr>
+  <tr><td>Deux croches</td><td><code>s.f</code></td><td>1.0 temps</td><td>Deux attaques : première note 0.5 + deuxième note 0.5. Le point est entre les deux notes.</td></tr>
+  <tr><td>Note pointée</td><td><code>d.</code></td><td>1.0 temps</td><td>Attaque sur 0.5, tenue sur 0.5. Le point est après la note. Pas de deuxième attaque.</td></tr>
+</table>
+
+<div class="error-box"><p><strong>Distinction critique</strong> : <code>d.</code> = 1 temps total (note pointée dans un temps). <code>d : -</code> = 2 temps (note + prolongation). Ne pas confondre.</p></div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2 id="format-heights"><span class="section-num">4</span> Format .msolfa — Hauteurs et modificateurs</h2>
+
+<p>Les 7 degrés de la gamme majeure : <code>d</code> (Do) · <code>r</code> (Ré) · <code>m</code> (Mi) · <code>f</code> (Fa) · <code>s</code> (Sol) · <code>l</code> (La) · <code>t</code> (Si). Degrés relatifs — la hauteur absolue dépend de la tonique active.</p>
+
+<h3>Modificateurs d'octave — collés à la note, sans espace</h3>
+
+<table>
+  <tr><th>Modificateur</th><th>Exemple</th><th>Effet</th></tr>
+  <tr><td><code>'</code></td><td><code>d'</code></td><td>Octave supérieure (+12 demi-tons)</td></tr>
+  <tr><td><code>''</code></td><td><code>d''</code></td><td>Double octave supérieure (+24 demi-tons)</td></tr>
+  <tr><td><code>,</code></td><td><code>s,</code></td><td>Octave inférieure (−12 demi-tons)</td></tr>
+  <tr><td><code>,,</code></td><td><code>s,,</code></td><td>Double octave inférieure (−24 demi-tons)</td></tr>
+  <tr><td><code>i</code></td><td><code>fi</code>, <code>si</code>, <code>ri</code>, <code>di</code></td><td>Demi-ton haut (dièse). Collé après la lettre, avant l'octave.</td></tr>
+</table>
+
+<div class="error-box"><p><strong>Interdit</strong> : espace entre la note et son modificateur. <code>d '</code> est invalide. Seul <code>d'</code> est correct.</p></div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2 id="format-rules"><span class="section-num">5</span> Règles de validation — Erreurs fréquentes</h2>
+
+<pre><span class="cm">// ERREUR — trop de temps en 3/4 (4 temps au lieu de 3)</span>
+<span class="err">S. | d : r : m : s |</span>
+
+<span class="cm">// ERREUR — modificateur avec espace (espace avant apostrophe)</span>
+<span class="err">S. | d ' : r : m |</span>
+
+<span class="cm">// ERREUR — voix manquante (T. et B. absents)</span>
+<span class="err">S. | d : r : m |
+A. | s : l : t |</span>
+
+<span class="cm">// ERREUR — métadonnée manquante (Titre, Compositeur, Tempo absents)</span>
+<span class="err">Key: G
+Mesure: 4/4</span>
+
+<span class="cm">// ERREUR — note et croche mixées incorrectement</span>
+<span class="err">S. | s. : r : m |  ← point après note seule sans deuxième note</span></pre>
+
+<p>Le parser lève une erreur bloquante avec message précis : voix concernée, numéro de mesure, total reçu, total attendu. Exemple : <em>"Erreur Alto Mesure 4 : Reçu 2.5 temps au lieu de 3"</em>.</p>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2 id="format-examples"><span class="section-num">6</span> Exemples de fichiers valides</h2>
+
+<h3>Exemple 3/4</h3>
+<pre><span class="kw">Key</span>: D
+<span class="kw">Mesure</span>: 3/4
+<span class="kw">Titre</span>: Exemple Simple
+<span class="kw">Compositeur</span>: Test
+<span class="kw">Tempo</span>: 100 BPM
+
+<span class="cm">// Mesure 1</span>
+S. | d : r : m |
+A. | s, : s, : s, |
+T. | m : f : s |
+B. | d : - : - |
+
+<span class="cm">// Mesure 2</span>
+S. | s.l : t : d' |
+A. | m : m : m |
+T. | s : s : s |
+B. | d : d. : d |</pre>
+
+<h3>Exemple 6/4 multi-mesures</h3>
+<pre><span class="kw">Key</span>: G
+<span class="kw">Mesure</span>: 6/4
+<span class="kw">Titre</span>: Cantique Test
+<span class="kw">Compositeur</span>: Anonyme
+<span class="kw">Tempo</span>: 80 BPM
+
+<span class="cm">// Mesures 1 & 2</span>
+S. | m : r : d | s : - : - | s : - : - |
+A. | d : d : d | m : - : - | m : - : - |
+T. | s : f : m | s : - : - | s : - : - |
+B. | d : d : d | d : - : - | d : - : - |</pre>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2 id="app-parser"><span class="section-num">7</span> Parser M-Solfa — Fonctionnement</h2>
+
+<p>Le parser est la pièce centrale. Il transforme le texte brut en structure de données typée consommée par le moteur audio et l'interface. Il doit être <strong>entièrement testé avec Vitest</strong> avant de passer au reste.</p>
+
+<div class="feature-grid">
+  <div class="feature-card">
+    <div class="fc-tag">Étape 1</div>
+    <div class="fc-title">Tokenisation (Lexer)</div>
+    <p class="fc-desc">Chaque ligne est classée : METADATA, COMMENT, VOICE_LINE, EMPTY_LINE. Le lexer ne valide pas, il découpe.</p>
+  </div>
+  <div class="feature-card">
+    <div class="fc-tag">Étape 2</div>
+    <div class="fc-title">Validation métadonnées</div>
+    <p class="fc-desc">Présence des 5 clés obligatoires. Format Key (regex A-G), Mesure (num/denom), Tempo (entier BPM).</p>
+  </div>
+  <div class="feature-card">
+    <div class="fc-tag">Étape 3</div>
+    <div class="fc-title">Parse des voix</div>
+    <p class="fc-desc">Découpe chaque ligne par | puis par :. Identifie chaque token comme note / tiret / silence / croche / pointée.</p>
+  </div>
+  <div class="feature-card">
+    <div class="fc-tag">Étape 4</div>
+    <div class="fc-title">Validation du compte</div>
+    <p class="fc-desc">Total des durées par groupe vs numérateur de Mesure. Si écart : erreur bloquante avec voix + mesure + reçu + attendu.</p>
+  </div>
+  <div class="feature-card">
+    <div class="fc-tag">Étape 5</div>
+    <div class="fc-title">Cohérence inter-voix</div>
+    <p class="fc-desc">Toutes les 4 voix d'un même bloc doivent avoir le même nombre de mesures reconstituées.</p>
+  </div>
+  <div class="feature-card">
+    <div class="fc-tag">Étape 6</div>
+    <div class="fc-title">Résultat typé</div>
+    <p class="fc-desc">Retourne ParseResult : succès avec MsolFile ou échec avec tableau de ParseError[]. Jamais les deux.</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2 id="app-audio"><span class="section-num">8</span> Moteur audio — Tone.js</h2>
+
+<p>Synthèse 100% temps réel via Web Audio API / Tone.js. <strong>Aucun fichier son externe</strong>. Fonctionne hors ligne après chargement de la page.</p>
+
+<h3>4 timbres synthétisés</h3>
+<table>
+  <tr><th>Timbre</th><th>Oscillateur</th><th>Enveloppe</th><th>Effets</th></tr>
+  <tr><td>Orgue</td><td>Sinusoïdal (5 harmoniques)</td><td>Attack 20ms, Sustain 1.0, Release 50ms</td><td>Tone.Reverb decay:3 wet:0.4</td></tr>
+  <tr><td>Piano</td><td>Triangulaire</td><td>Attack 5ms, Decay 300ms, Sustain 0.1</td><td>Aucun — son percussif naturel</td></tr>
+  <tr><td>Cordes</td><td>Dents de scie</td><td>Attack 200ms, Sustain 0.9, Release 300ms</td><td>Filter lowpass 2000Hz + Chorus</td></tr>
+  <tr><td>Cuivres</td><td>Carré (square)</td><td>Attack 30ms, Sustain 0.8, Release 100ms</td><td>Filter lowpass 3000Hz</td></tr>
+</table>
+
+<h3>Architecture de chaîne audio par voix</h3>
+<pre>Oscillateur(s)
+  → GainNode (enveloppe ADSR)
+  → Filter (selon timbre)
+  → VolumeNode (mute / solo)
+  → VolumeNode global
+  → AudioContext.destination</pre>
+
+<h3>Calcul des fréquences — Tonal.js</h3>
+<p>Intervalles demi-tons des degrés : <code>d=0 r=2 m=4 f=5 s=7 l=9 t=11</code>. Chromatic <code>i</code> = +1. Octave <code>'</code> = +12, <code>,</code> = −12. Formule MIDI → Hz : <code>f = 440 × 2^((midi−69)/12)</code>.</p>
+
+<h3>Scheduling audio</h3>
+<p>Toutes les notes sont schedulées à l'avance via <code>oscillator.start(audioContext.currentTime + offset)</code>. L'horloge maître est <code>AudioContext.currentTime</code> — pas un setInterval. Garantit zéro drift. Quand le tempo change, les offsets restants sont recalculés depuis la position courante.</p>
+
+<h3>Mute / Solo</h3>
+<p>Mute : gain de la voix mis à <code>-Infinity</code> avec ramp 5ms (évite les clics audio). Solo : toutes les autres voix mutées. Désactivation : gain restauré à 0 dB avec le même ramp.</p>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2 id="app-ui"><span class="section-num">9</span> Interface — Structure générale</h2>
+
+<p>Page unique (dashboard). Trois sections empilées verticalement occupant toute la hauteur de l'écran.</p>
+
+<div class="layout-diagram">
+  <div class="layout-zone">
+    <div class="zone-label">Section 1 — Configuration (haut, hauteur fixe)</div>
+    <div class="zone-content">
+      <span class="zone-item accent">Ouvrir .msolfa</span>
+      <span class="zone-item">Titre / Compositeur</span>
+      <span class="zone-item">Mesure active</span>
+      <span class="zone-item accent">▶ Lecture</span>
+      <span class="zone-item accent">⏸ Pause</span>
+      <span class="zone-item accent">⏹ Stop</span>
+      <span class="zone-item">BPM slider</span>
+      <span class="zone-item">Tonique select</span>
+      <span class="zone-item">Timbre select</span>
+      <span class="zone-item">Mute S A T B</span>
+      <span class="zone-item">Solo S A T B</span>
+    </div>
+  </div>
+  <div class="layout-zone">
+    <div class="zone-label">Section 2 — Partition défilante (milieu, flex-1, scrollable)</div>
+    <div class="zone-content">
+      <span class="zone-item">// Mesure X</span>
+      <span class="zone-item accent">S. | m : r : d | ←surlignage temps actif</span>
+      <span class="zone-item">A. | d : d : d |</span>
+      <span class="zone-item">T. | s : f : m |</span>
+      <span class="zone-item">B. | d : d : d |</span>
+      <span class="zone-item">Barre progression</span>
+    </div>
+  </div>
+  <div class="layout-zone">
+    <div class="zone-label">Section 3 — Piano virtuel (bas, hauteur fixe)</div>
+    <div class="zone-content">
+      <span class="zone-item">Bandeau aide textuelle</span>
+      <span class="zone-item accent">43 touches Do2→Sol5</span>
+      <span class="zone-item" style="color:var(--red)">■ Soprano</span>
+      <span class="zone-item" style="color:var(--blue)">■ Alto</span>
+      <span class="zone-item" style="color:var(--green)">■ Ténor</span>
+      <span class="zone-item" style="color:var(--orange)">■ Basse</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2 id="app-score"><span class="section-num">10</span> Partition défilante — Détails</h2>
+
+<div class="feature-grid">
+  <div class="feature-card">
+    <div class="fc-tag">Rendu</div>
+    <div class="fc-title">Affichage propre</div>
+    <p class="fc-desc">Les 4 lignes de voix alignées verticalement par colonne de temps. Les commentaires // affichés comme titres de section. Pas de balises techniques visibles.</p>
+  </div>
+  <div class="feature-card">
+    <div class="fc-tag">Sync</div>
+    <div class="fc-title">Surlignage temps réel</div>
+    <p class="fc-desc">Boucle requestAnimationFrame lisant AudioContext.currentTime. La colonne de temps active est mise en évidence simultanément sur les 4 voix. Jamais en avance ni en retard sur l'audio.</p>
+  </div>
+  <div class="feature-card">
+    <div class="fc-tag">Navigation</div>
+    <div class="fc-title">Barre de progression</div>
+    <p class="fc-desc">Cliquable. Un clic repositionne la tête de lecture audio et le surlignage instantanément. Le moteur audio reprend depuis ce point.</p>
+  </div>
+  <div class="feature-card">
+    <div class="fc-tag">Sélection</div>
+    <div class="fc-title">Section loop</div>
+    <p class="fc-desc">Cliquer-glisser sur la partition sélectionne une plage. La lecture se restreint à cette plage (arrêt en fin ou boucle). Désélection = retour global.</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2 id="app-piano"><span class="section-num">11</span> Piano virtuel — Détails</h2>
+
+<h3>Visuel du clavier</h3>
+<div class="piano-diagram">
+  <div class="piano-keys">
+    <div class="white-key key-b"></div>
+    <div class="black-key"></div>
+    <div class="white-key"></div>
+    <div class="black-key key-t"></div>
+    <div class="white-key"></div>
+    <div class="white-key key-a"></div>
+    <div class="black-key"></div>
+    <div class="white-key"></div>
+    <div class="black-key key-s"></div>
+    <div class="white-key"></div>
+    <div class="black-key"></div>
+    <div class="white-key"></div>
+  </div>
+  <div class="piano-legend">
+    <span><div class="dot" style="background:var(--red)"></div> Soprano (rouge)</span>
+    <span><div class="dot" style="background:var(--blue)"></div> Alto (bleu)</span>
+    <span><div class="dot" style="background:var(--green)"></div> Ténor (vert)</span>
+    <span><div class="dot" style="background:var(--orange)"></div> Basse (orange)</span>
+  </div>
+</div>
+
+<p>Étendue fixe : <strong>43 touches</strong>, Do2 (C2) à Sol5 (G5). Les touches blanches et noires aux proportions réelles. L'étendue ne change pas avec la transposition — c'est l'étendue physique. Les touches qui s'illuminent changent selon la tonique active.</p>
+
+<h3>Règle absolue du 3+1 mains</h3>
+<div class="hand-rule">
+  <div class="hand-box">
+    <div class="hand-title">Main droite — 3 doigts actifs</div>
+    <div class="hand-note">
+      <div class="hand-dot" style="background:var(--red)"></div>
+      <div><strong style="color:var(--text)">Soprano</strong> — doigt le plus haut. Registre aigu.</div>
+    </div>
+    <div class="hand-note">
+      <div class="hand-dot" style="background:var(--blue)"></div>
+      <div><strong style="color:var(--text)">Alto</strong> — doigt médian. Registre moyen.</div>
+    </div>
+    <div class="hand-note">
+      <div class="hand-dot" style="background:var(--green)"></div>
+      <div><strong style="color:var(--text)">Ténor</strong> — pouce. Basculé automatiquement à l'octave supérieure si trop grave. Toujours dans la zone main droite.</div>
+    </div>
+  </div>
+  <div class="hand-box">
+    <div class="hand-title">Main gauche — 1 seul doigt</div>
+    <div class="hand-note">
+      <div class="hand-dot" style="background:var(--orange)"></div>
+      <div><strong style="color:var(--text)">Basse</strong> — une unique touche dans le registre grave. Jamais un accord. Jamais deux touches simultanées.</div>
+    </div>
+    <div style="padding: 10px 0; font-size: 12px; color: var(--text3);">
+      La main gauche marque toujours la note fondamentale seule. C'est une règle absolue — aucune exception.
+    </div>
+  </div>
+</div>
+
+<h3>Bascule automatique du Ténor</h3>
+<div class="rule-box"><p>Si la note réelle du Ténor tombe en dessous du Do3, le système la transpose automatiquement une octave vers le haut pour la maintenir dans la zone jouable de la main droite. Ce décalage est uniquement visuel (affichage piano) — la note jouée par le moteur audio n'est pas modifiée.</p></div>
+
+<h3>Mode apprentissage (Pause)</h3>
+<div class="feature-grid">
+  <div class="feature-card">
+    <div class="fc-title">Pause + clic sur un temps</div>
+    <p class="fc-desc">Le moteur audio se tait. Le piano maintient allumées les 4 touches (3 droite + 1 gauche) indéfiniment. L'utilisateur peut poser ses mains sur un vrai piano à son rythme.</p>
+  </div>
+  <div class="feature-card">
+    <div class="fc-title">Bandeau d'aide textuelle</div>
+    <p class="fc-desc">Juste au-dessus du piano. Affiche en temps réel : <code>Main Gauche (1 doigt) : [ Sol ] | Main Droite (3 doigts) : [ Mi - Do - Sol ]</code>. Mis à jour à chaque temps. Figé au dernier temps cliqué en mode pause.</p>
+  </div>
+</div>
+
+<h3>Filtre Solo sur le piano</h3>
+<p>Si une voix est en Solo, seules les touches de cette voix s'illuminent sur le clavier. Les touches des autres voix restent éteintes. Le bandeau d'aide mentionne uniquement la/les voix solos.</p>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2 id="app-controls"><span class="section-num">12</span> Contrôles — Tous les features</h2>
+
+<div class="feature-grid">
+  <div class="feature-card">
+    <div class="fc-tag">Transport</div>
+    <div class="fc-title">Lecture / Pause / Stop</div>
+    <p class="fc-desc">Lecture démarre ou reprend. Pause gèle à l'instant précis, maintient l'état visuel. Stop remet tout à zéro (position, surlignage, piano).</p>
+  </div>
+  <div class="feature-card">
+    <div class="fc-tag">Transport</div>
+    <div class="fc-title">Tempo en temps réel</div>
+    <p class="fc-desc">Slider ou champ numérique. Plage 20–240 BPM. Modifiable pendant la lecture sans interruption. Le moteur recalcule les timestamps restants.</p>
+  </div>
+  <div class="feature-card">
+    <div class="fc-tag">Transposition</div>
+    <div class="fc-title">Sélecteur de tonique</div>
+    <p class="fc-desc">Do, Ré, Mi, Fa, Sol, La, Si, Sib, Mib, Lab, Reb, Fa#. La transposition est appliquée instantanément. Affichage mis à jour : "Clé de Ré". Le fichier source n'est pas modifié.</p>
+  </div>
+  <div class="feature-card">
+    <div class="fc-tag">Audio</div>
+    <div class="fc-title">Sélecteur de timbre</div>
+    <p class="fc-desc">Orgue, Piano, Cordes, Cuivres. Changeable en temps réel. Les nouvelles attaques utilisent le nouveau timbre. Global pour les 4 voix.</p>
+  </div>
+  <div class="feature-card">
+    <div class="fc-tag">Voix</div>
+    <div class="fc-title">Mute individuel</div>
+    <p class="fc-desc">Un bouton par voix (S, A, T, B). Coupe le son sans interrompre la lecture. L'oscillateur continue pour maintenir la synchronisation.</p>
+  </div>
+  <div class="feature-card">
+    <div class="fc-tag">Voix</div>
+    <div class="fc-title">Solo</div>
+    <p class="fc-desc">Un bouton par voix. Isole une ou plusieurs voix. Les autres sont mutées. Impacte aussi le piano (seules les touches de la voix solo s'illuminent).</p>
+  </div>
+  <div class="feature-card">
+    <div class="fc-tag">Navigation</div>
+    <div class="fc-title">Barre de progression</div>
+    <p class="fc-desc">Cliquable n'importe où. Repositionne instantanément la tête de lecture audio et le surlignage visuel.</p>
+  </div>
+  <div class="feature-card">
+    <div class="fc-tag">Navigation</div>
+    <div class="fc-title">Sélection de section</div>
+    <p class="fc-desc">Cliquer-glisser sur la partition pour sélectionner une plage. La lecture se restreint à cette plage. Boucle ou arrêt en fin de sélection.</p>
+  </div>
+  <div class="feature-card">
+    <div class="fc-tag">Fichiers</div>
+    <div class="fc-title">Ouverture de fichier</div>
+    <p class="fc-desc">File System Access API (boîte de dialogue native) ou drag-and-drop. Lecture du contenu texte. Si erreur de parsing, message précis affiché. Ancien morceau conservé.</p>
+  </div>
+  <div class="feature-card">
+    <div class="fc-tag">Persistance</div>
+    <div class="fc-title">Préférences locales</div>
+    <p class="fc-desc">localStorage pour timbre préféré, tempo par défaut, tonique préférée. IndexedDB pour l'historique des fichiers récents et leur contenu en cache.</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2 id="tech-stack"><span class="section-num">13</span> Stack technique</h2>
+
+<div class="stack-row">
+  <div class="stack-layer">Framework</div>
+  <div><span class="stack-pkg">next@14</span> + <span class="stack-pkg">typescript</span><div class="stack-role">App Router, Server Components, API Routes. Base de tout.</div></div>
+  <div class="stack-lic">MIT</div>
+</div>
+<div class="stack-row">
+  <div class="stack-layer">UI</div>
+  <div><span class="stack-pkg">tailwindcss</span> + <span class="stack-pkg">shadcn/ui</span><div class="stack-role">Styling utilitaire. Composants Radix accessibles (Slider, Select, Toggle).</div></div>
+  <div class="stack-lic">MIT</div>
+</div>
+<div class="stack-row">
+  <div class="stack-layer">État global</div>
+  <div><span class="stack-pkg">zustand</span><div class="stack-role">Store central pour position, tempo, mute/solo, timbre, tonique. Léger (~1KB).</div></div>
+  <div class="stack-lic">MIT</div>
+</div>
+<div class="stack-row">
+  <div class="stack-layer">Audio</div>
+  <div><span class="stack-pkg">tone</span><div class="stack-role">Synthèse temps réel. PolySynth, enveloppes ADSR, effets (Reverb, Chorus, Filter). Scheduling musical précis.</div></div>
+  <div class="stack-lic">MIT</div>
+</div>
+<div class="stack-row">
+  <div class="stack-layer">Théorie musicale</div>
+  <div><span class="stack-pkg">tonal</span><div class="stack-role">Conversion degrés solfa → notes réelles → MIDI. Calcul de transposition. Noms de notes dans toutes tonalités.</div></div>
+  <div class="stack-lic">MIT</div>
+</div>
+<div class="stack-row">
+  <div class="stack-layer">Piano visuel</div>
+  <div><span class="stack-pkg">react-piano</span><div class="stack-role">Clavier 43 touches (C2–G5). Touches illuminables via activeNotes. CSS personnalisé pour couleurs SATB.</div></div>
+  <div class="stack-lic">MIT</div>
+</div>
+<div class="stack-row">
+  <div class="stack-layer">Tests</div>
+  <div><span class="stack-pkg">vitest</span> + <span class="stack-pkg">@testing-library/react</span><div class="stack-role">Tests unitaires du parser (obligatoires). Tests de composants.</div></div>
+  <div class="stack-lic">MIT</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2 id="tech-types"><span class="section-num">14</span> Types TypeScript — Domaine M-Solfa</h2>
+
+<pre><span class="cm">// Degrés de la gamme</span>
+<span class="kw">type</span> Degree = 'd' | 'r' | 'm' | 'f' | 's' | 'l' | 't'
+
+<span class="cm">// Modificateurs d'octave</span>
+<span class="kw">type</span> OctaveModifier = '' | "'" | "''" | ',' | ',,'
+
+<span class="cm">// Voix</span>
+<span class="kw">type</span> Voice = 'S' | 'A' | 'T' | 'B'
+
+<span class="cm">// Modificateur chromatique</span>
+<span class="kw">type</span> ChromaticModifier = 'i' | null
+
+<span class="cm">// Élément rythmique</span>
+<span class="kw">interface</span> MsolNote {
+  type: 'note'
+  degree: Degree
+  octave: OctaveModifier
+  chromatic: ChromaticModifier
+  duration: <span class="nm">number</span>        <span class="cm">// 1.0 ou 0.5</span>
+  isSecondHalf?: <span class="nm">boolean</span>  <span class="cm">// true si 2ème croche d'un s.f</span>
+}
+<span class="kw">interface</span> MsolRest  { type: 'rest'; duration: <span class="nm">number</span> }
+<span class="kw">interface</span> MsolTie   { type: 'tie';  duration: <span class="nm">number</span> }
+<span class="kw">type</span> MsolElement = MsolNote | MsolRest | MsolTie
+
+<span class="cm">// Un temps (1.0 durée totale)</span>
+<span class="kw">interface</span> MsolBeat {
+  elements: MsolElement[]
+  totalDuration: <span class="nm">number</span>  <span class="cm">// toujours 1.0</span>
+}
+
+<span class="cm">// Une mesure complète</span>
+<span class="kw">interface</span> MsolMeasure {
+  index: <span class="nm">number</span>
+  beats: Record&lt;Voice, MsolBeat[]&gt;
+  totalBeats: <span class="nm">number</span>
+}
+
+<span class="cm">// Résultat du parsing</span>
+<span class="kw">type</span> ParseResult =
+  | { success: <span class="nm">true</span>;  file: MsolFile }
+  | { success: <span class="nm">false</span>; errors: ParseError[] }</pre>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2 id="tech-roadmap"><span class="section-num">15</span> Roadmap de développement</h2>
+
+<div class="roadmap">
+  <div class="road-step">
+    <div class="road-title">Phase 0 — Environnement (1 jour)</div>
+    <div class="road-desc">Node 20, Git, VS Code. <code>npx create-next-app@latest</code> avec TypeScript + Tailwind + App Router + src dir. Installation de toutes les dépendances. Configuration tsconfig strict. Setup Vitest. Création de la structure des dossiers.</div>
+  </div>
+  <div class="road-step">
+    <div class="road-title">Phase 1 — Types + Parser + Tests (3–4 jours)</div>
+    <div class="road-desc">Fichier <code>msolfa.types.ts</code> complet. Lexer, Validator, Parser. Tests Vitest exhaustifs : mesure valide, métadonnée manquante, mauvais compte de temps, croches, modificateurs d'octave. Ne pas continuer sans tous les tests verts.</div>
+  </div>
+  <div class="road-step">
+    <div class="road-title">Phase 2 — Moteur audio (3–4 jours)</div>
+    <div class="road-desc">Module transposition.ts avec Tonal.js. Les 4 timbres (organ, piano, strings, brass). Engine.ts avec MsolfaAudioEngine. Scheduling Tone.js. Mute/Solo. Test dans la console navigateur.</div>
+  </div>
+  <div class="road-step">
+    <div class="road-title">Phase 3 — Store Zustand (1 jour)</div>
+    <div class="road-desc">Store global msolfa.store.ts avec tous les états et actions. Colle le parser, l'audio et l'interface.</div>
+  </div>
+  <div class="road-step">
+    <div class="road-title">Phase 4 — Interface de base (2–3 jours)</div>
+    <div class="road-desc">Page unique (page.tsx). FileOpener.tsx (ouverture fichier local). Transport.tsx (Lecture/Pause/Stop + BPM). VoiceControls.tsx (Mute/Solo SATB). MetadataBar.tsx. Premier rendu fonctionnel.</div>
+  </div>
+  <div class="road-step">
+    <div class="road-title">Phase 5 — Partition défilante (2–3 jours)</div>
+    <div class="road-desc">ScrollingScore.tsx. Rendu propre du texte .msolfa. Boucle requestAnimationFrame. Surlignage synchronisé sur AudioContext.currentTime. Barre de progression cliquable.</div>
+  </div>
+  <div class="road-step">
+    <div class="road-title">Phase 6 — Piano virtuel (3–4 jours)</div>
+    <div class="road-desc">VirtualPiano.tsx avec react-piano. Mapping degrés → MIDI → touches. Règle 3+1 mains (handRouter.ts). Illumination couleurs SATB. Mode apprentissage pause. HelpBanner.tsx (bandeau aide textuelle). Filtre Solo.</div>
+  </div>
+  <div class="road-step">
+    <div class="road-title">Phase 7 — Polish & Persistance (2–3 jours)</div>
+    <div class="road-desc">Sélecteur tonique + transposition à la volée. Sélection de section (loop). localStorage préférences. IndexedDB historique fichiers. Tests finaux. Vérification dark mode.</div>
+  </div>
+</div>
+
+<div class="rule-box" style="margin-top: 32px;">
+  <p><strong>Règle absolue du développement</strong> : Ne jamais passer à la phase suivante sans que la phase courante soit fonctionnelle et testée. Le parser (Phase 1) est la fondation de tout — s'il est buggé, tout le reste l'est aussi.</p>
+</div>
+
+</main>
+</div>
+</body>
+</html>

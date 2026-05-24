@@ -1,0 +1,211 @@
+
+<style>
+.piano-outer{background:var(--color-background-secondary);border-radius:var(--border-radius-lg);padding:12px 14px 20px;border:0.5px solid var(--color-border-tertiary)}
+.help-banner{display:flex;gap:20px;align-items:center;margin-bottom:12px;padding:8px 12px;background:var(--color-background-primary);border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-tertiary);font-size:12px}
+.hand-label{font-size:11px;color:var(--color-text-tertiary);margin-right:6px}
+.hn{padding:2px 8px;border-radius:3px;font-size:11px;font-weight:500;font-family:var(--font-mono);display:inline-block}
+.hn-b{background:#FAEEDA;color:#633806}
+.hn-s{background:#FCEBEB;color:#791F1F}
+.hn-a{background:#E6F1FB;color:#0C447C}
+.hn-t{background:#EAF3DE;color:#27500A}
+.piano-scroll{overflow-x:auto;padding-bottom:6px}
+.piano{position:relative;height:100px;display:flex;width:fit-content;margin:0 auto}
+.wk{
+  width:22px;height:100px;
+  background:#f2efe8;
+  border-left:0.5px solid #bbb;
+  border-bottom:1px solid #bbb;
+  border-right:0.5px solid #ccc;
+  border-radius:0 0 4px 4px;
+  position:relative;flex-shrink:0;cursor:pointer;
+  display:flex;align-items:flex-end;justify-content:center;
+  padding-bottom:5px;
+  transition:background .08s;
+}
+.wk:hover{background:#e8e4dc}
+.bk{
+  width:14px;height:62px;
+  background:#18181c;
+  border-radius:0 0 3px 3px;
+  position:absolute;top:0;z-index:3;cursor:pointer;
+  transition:background .08s;
+  border-bottom:1px solid #000;
+}
+.bk:hover{background:#2a2830}
+.oct-line{position:absolute;bottom:-18px;font-size:9px;color:var(--color-text-tertiary);width:22px;text-align:center}
+
+.lit-s-w{background:#F09595 !important}
+.lit-a-w{background:#85B7EB !important}
+.lit-t-w{background:#97C459 !important}
+.lit-b-w{background:#EF9F27 !important}
+.lit-s-b{background:#E24B4A !important}
+.lit-a-b{background:#378ADD !important}
+.lit-t-b{background:#639922 !important}
+.lit-b-b{background:#BA7517 !important}
+
+.key-name{font-size:8px;color:#aaa;font-family:var(--font-mono)}
+.key-name-lit{color:#fff !important}
+
+.legend{display:flex;gap:12px;justify-content:center;margin-top:22px;flex-wrap:wrap}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--color-text-secondary)}
+.leg-dot{width:10px;height:10px;border-radius:2px}
+
+.beat-ctrl{display:flex;gap:6px;align-items:center;margin-top:12px;justify-content:center;flex-wrap:wrap}
+.beat-btn{padding:5px 10px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);font-size:11px;font-family:var(--font-mono);cursor:pointer;color:var(--color-text-secondary);transition:background .1s}
+.beat-btn:hover{background:var(--color-background-secondary)}
+.beat-btn.active-s{background:#FCEBEB;color:#791F1F;border-color:#F09595;font-weight:500}
+.beat-btn.active-a{background:#E6F1FB;color:#0C447C;border-color:#85B7EB;font-weight:500}
+.beat-btn.active-t{background:#EAF3DE;color:#27500A;border-color:#97C459;font-weight:500}
+.beat-btn.active-b{background:#FAEEDA;color:#633806;border-color:#EF9F27;font-weight:500}
+.beat-btn.active-all{background:var(--color-background-success);color:var(--color-text-success);border-color:var(--color-border-success);font-weight:500}
+</style>
+
+<h2 class="sr-only">Piano virtuel interactif M-Solfa — 43 touches avec illumination des 4 voix SATB</h2>
+
+<div class="piano-outer">
+
+  <div class="help-banner" id="helpBanner">
+    <div>
+      <span class="hand-label">Main gauche (1 doigt)</span>
+      <span class="hn hn-b" id="hl-left">Sol</span>
+    </div>
+    <div style="width:0.5px;height:18px;background:var(--color-border-tertiary)"></div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <span class="hand-label">Main droite (3 doigts)</span>
+      <span id="hl-right" style="display:flex;gap:4px">
+        <span class="hn hn-s">Si</span>
+        <span class="hn hn-a">Sol</span>
+        <span class="hn hn-t">Ré</span>
+      </span>
+    </div>
+  </div>
+
+  <div class="piano-scroll">
+    <div class="piano" id="piano"></div>
+  </div>
+
+  <div class="legend">
+    <div class="leg-item"><div class="leg-dot" style="background:#E24B4A"></div>Soprano (rouge)</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#378ADD"></div>Alto (bleu)</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#639922"></div>Ténor (vert)</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#BA7517"></div>Basse (orange)</div>
+    <div class="leg-item" style="margin-left:8px;font-size:11px;color:var(--color-text-tertiary)">Cliquer un temps pour voir les touches</div>
+  </div>
+
+  <div class="beat-ctrl" id="beatCtrl"></div>
+
+</div>
+
+<script>
+const WHITE_NOTES = ['C','D','E','F','G','A','B'];
+const BLACK_AFTER = {C:true, D:true, F:true, G:true, A:true};
+
+const BEATS = [
+  {label:'M1 T1', s:'B4', a:'G4', t:'D4', b:'G2', bn:{l:'Sol', r:[{c:'hn-s',n:'Si'},{c:'hn-a',n:'Sol'},{c:'hn-t',n:'Ré'}]}},
+  {label:'M1 T2', s:'A4', a:'F#4',t:'C4', b:'G2', bn:{l:'Sol', r:[{c:'hn-s',n:'La'},{c:'hn-a',n:'Fa#'},{c:'hn-t',n:'Do'}]}},
+  {label:'M1 T3', s:'G4', a:'E4', t:'B3', b:'G2', bn:{l:'Sol', r:[{c:'hn-s',n:'Sol'},{c:'hn-a',n:'Mi'},{c:'hn-t',n:'Si'}]}},
+  {label:'M1 T4', s:'D5', a:'B4', t:'G4', b:'G2', bn:{l:'Sol', r:[{c:'hn-s',n:'Ré'},{c:'hn-a',n:'Si'},{c:'hn-t',n:'Sol'}]}},
+  {label:'M2 T1', s:'D5', a:'B4', t:'G4', b:'G2', bn:{l:'Sol', r:[{c:'hn-s',n:'Ré'},{c:'hn-a',n:'Si'},{c:'hn-t',n:'Sol'}]}},
+  {label:'M2 T4', s:'C5', a:'A4', t:'F4', b:'G2', bn:{l:'Sol', r:[{c:'hn-s',n:'Do'},{c:'hn-a',n:'La'},{c:'hn-t',n:'Fa'}]}},
+  {label:'M2 T5', s:'D5', a:'B4', t:'G4', b:'G2', bn:{l:'Sol', r:[{c:'hn-s',n:'Ré'},{c:'hn-a',n:'Si'},{c:'hn-t',n:'Sol'}]}},
+  {label:'M2 T6', s:'E5', a:'C5', t:'G4', b:'G2', bn:{l:'Sol', r:[{c:'hn-s',n:'Mi'},{c:'hn-a',n:'Do'},{c:'hn-t',n:'Sol'}]}},
+  {label:'M3 T1', s:'A4', a:'F#4',t:'D4', b:'G2', bn:{l:'Sol', r:[{c:'hn-s',n:'La'},{c:'hn-a',n:'Fa#'},{c:'hn-t',n:'Ré'}]}},
+  {label:'M3 T3', s:'G4', a:'E4', t:'B3', b:'G2', bn:{l:'Sol', r:[{c:'hn-s',n:'Sol'},{c:'hn-a',n:'Mi'},{c:'hn-t',n:'Si'}]}},
+];
+
+let currentBeat = 0;
+
+function noteToId(n){ return 'key-' + n.replace('#','s'); }
+
+function buildPiano(){
+  const piano = document.getElementById('piano');
+  piano.innerHTML = '';
+  let wPos = 0;
+  for(let oct=2; oct<=5; oct++){
+    WHITE_NOTES.forEach((note,ni)=>{
+      if(oct===5 && ni>4) return;
+      const full = note+oct;
+      const wDiv = document.createElement('div');
+      wDiv.className = 'wk';
+      wDiv.id = noteToId(full);
+      wDiv.setAttribute('data-note', full);
+      wDiv.setAttribute('data-black','false');
+      if(note==='C'){
+        const lbl = document.createElement('span');
+        lbl.className = 'oct-line';
+        lbl.textContent = 'C'+oct;
+        wDiv.appendChild(lbl);
+      }
+      const nm = document.createElement('span');
+      nm.className = 'key-name';
+      nm.id = 'nm-'+noteToId(full);
+      nm.textContent = note;
+      wDiv.appendChild(nm);
+      piano.appendChild(wDiv);
+      if(BLACK_AFTER[note] && !(oct===5 && ni>=4)){
+        const sharpFull = note+'#'+oct;
+        const bDiv = document.createElement('div');
+        bDiv.className = 'bk';
+        bDiv.id = noteToId(sharpFull);
+        bDiv.setAttribute('data-note', sharpFull);
+        bDiv.setAttribute('data-black','true');
+        bDiv.style.left = (wPos * 22 + 15) + 'px';
+        piano.appendChild(bDiv);
+      }
+      wPos++;
+    });
+  }
+}
+
+function clearPiano(){
+  document.querySelectorAll('.wk,.bk').forEach(el=>{
+    el.className = el.className
+      .replace(/lit-[satb]-[wb]/g,'').trim()
+      .replace(/\s+/g,' ');
+    const nm = el.querySelector('.key-name');
+    if(nm) nm.classList.remove('key-name-lit');
+  });
+}
+
+function lightNote(noteStr, voice){
+  const id = noteToId(noteStr);
+  const el = document.getElementById(id);
+  if(!el) return;
+  const isBlack = el.getAttribute('data-black')==='true';
+  const cls = 'lit-'+voice+'-'+(isBlack?'b':'w');
+  el.classList.add(cls);
+  const nm = el.querySelector('.key-name');
+  if(nm) nm.classList.add('key-name-lit');
+}
+
+function showBeat(idx){
+  currentBeat = idx;
+  clearPiano();
+  const bt = BEATS[idx];
+  lightNote(bt.b, 'b');
+  lightNote(bt.t, 't');
+  lightNote(bt.a, 'a');
+  lightNote(bt.s, 's');
+  document.getElementById('hl-left').textContent = bt.bn.l;
+  document.getElementById('hl-right').innerHTML =
+    bt.bn.r.map(x=>`<span class="hn ${x.c}">${x.n}</span>`).join('');
+  document.querySelectorAll('.beat-btn').forEach((b,i)=>{
+    b.className = 'beat-btn' + (i===idx ? ' active-all' : '');
+  });
+}
+
+function buildControls(){
+  const ctrl = document.getElementById('beatCtrl');
+  BEATS.forEach((bt,i)=>{
+    const btn = document.createElement('button');
+    btn.className = 'beat-btn' + (i===0?' active-all':'');
+    btn.textContent = bt.label;
+    btn.onclick = ()=>showBeat(i);
+    ctrl.appendChild(btn);
+  });
+}
+
+buildPiano();
+buildControls();
+showBeat(0);
+</script>

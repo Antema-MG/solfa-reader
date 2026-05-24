@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg:    #0d0d0f;
+  --bg2:   #16161a;
+  --bg3:   #1d1d22;
+  --bg4:   #26262c;
+  --border:  rgba(255,255,255,0.08);
+  --border2: rgba(255,255,255,0.16);
+  --text:  #e8e6e0;
+  --text2: #9a9890;
+  --text3: #5e5c58;
+  --accent:  #c8a96e;
+  --green:   #1d9e75;
+  --green2:  #0f6e56;
+  --red-btn: #c0392b;
+  --s: #e24b4a;
+  --a: #378add;
+  --t: #639922;
+  --b: #ba7517;
+  --s-bg: rgba(226,75,74,0.16);
+  --a-bg: rgba(55,138,221,0.16);
+  --t-bg: rgba(99,153,34,0.16);
+  --b-bg: rgba(186,117,23,0.16);
+  --mono: 'Consolas', 'Courier New', monospace;
+  --sans: 'Segoe UI', system-ui, sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body, #root { height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 14px;
+  overflow: hidden;
+}
+button { font-family: inherit; cursor: pointer; }

@@ -1,0 +1,478 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.app{background:var(--color-background-tertiary);border-radius:var(--border-radius-lg);overflow:hidden;border:0.5px solid var(--color-border-tertiary);font-family:var(--font-sans)}
+
+.topbar{background:var(--color-background-primary);border-bottom:0.5px solid var(--color-border-tertiary);padding:10px 14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.meta{display:flex;flex-direction:column;flex:1;min-width:120px}
+.meta-title{font-size:13px;font-weight:500;color:var(--color-text-primary)}
+.meta-sub{font-size:11px;color:var(--color-text-tertiary)}
+.transport{display:flex;align-items:center;gap:6px}
+.btn-transport{display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);cursor:pointer;color:var(--color-text-primary);font-size:15px}
+.btn-play{background:#1D9E75;border-color:#1D9E75;color:#fff}
+.tempo-row{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--color-text-secondary)}
+.tempo-row input{width:80px}
+.sel-row{display:flex;align-items:center;gap:6px}
+.sel-row select{font-size:12px;padding:4px 8px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary)}
+
+.voice-strip{background:var(--color-background-primary);border-bottom:0.5px solid var(--color-border-tertiary);padding:8px 14px;display:flex;gap:8px;align-items:center}
+.voice-chip{display:flex;align-items:center;gap:5px;padding:4px 8px;border-radius:20px;border:0.5px solid;font-size:11px;font-weight:500;cursor:pointer;transition:opacity .15s}
+.v-s{border-color:#A32D2D;color:#A32D2D;background:#FCEBEB}
+.v-a{border-color:#185FA5;color:#185FA5;background:#E6F1FB}
+.v-t{border-color:#3B6D11;color:#3B6D11;background:#EAF3DE}
+.v-b{border-color:#854F0B;color:#854F0B;background:#FAEEDA}
+.v-s.muted,.v-a.muted,.v-t.muted,.v-b.muted{opacity:.4}
+.voice-dot{width:7px;height:7px;border-radius:50%;background:currentColor}
+.solo-badge{font-size:9px;padding:1px 4px;border-radius:3px;background:currentColor;color:#fff;margin-left:2px}
+
+.score-area{background:var(--color-background-secondary);padding:12px 14px;font-family:var(--font-mono);font-size:12px;line-height:1}
+.measure-comment{color:var(--color-text-tertiary);font-size:11px;margin:10px 0 6px;letter-spacing:.03em}
+.voice-row{display:flex;align-items:center;gap:0;margin-bottom:5px}
+.voice-label{width:24px;font-size:11px;font-weight:500;flex-shrink:0}
+.ls{color:#A32D2D}.la{color:#185FA5}.lt{color:#3B6D11}.lb{color:#854F0B}
+.beats{display:flex;align-items:center;gap:0}
+.bar-sep{color:var(--color-text-tertiary);padding:0 4px;font-size:13px;font-weight:300}
+.beat{display:flex;align-items:center;min-width:28px;justify-content:center}
+.beat-sep{color:var(--color-text-tertiary);font-size:11px;padding:0 2px}
+.beat-val{padding:3px 4px;border-radius:3px;font-size:12px;color:var(--color-text-secondary);transition:background .1s,color .1s}
+.beat-val.active-s{background:#FCEBEB;color:#A32D2D;font-weight:500}
+.beat-val.active-a{background:#E6F1FB;color:#185FA5;font-weight:500}
+.beat-val.active-t{background:#EAF3DE;color:#3B6D11;font-weight:500}
+.beat-val.active-b{background:#FAEEDA;color:#854F0B;font-weight:500}
+.beat-val.active-col{background:var(--color-background-info);color:var(--color-text-info);font-weight:500}
+
+.progress-bar-wrap{padding:8px 14px;background:var(--color-background-primary);border-top:0.5px solid var(--color-border-tertiary);border-bottom:0.5px solid var(--color-border-tertiary)}
+.progress-track{height:4px;background:var(--color-border-tertiary);border-radius:2px;cursor:pointer;position:relative}
+.progress-fill{height:4px;background:#1D9E75;border-radius:2px;width:35%;transition:width .1s}
+
+.help-banner{background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary);padding:8px 14px;font-size:12px;color:var(--color-text-secondary);display:flex;gap:16px;align-items:center}
+.hand-label{font-size:11px;color:var(--color-text-tertiary);margin-right:4px}
+.hand-notes{display:flex;gap:5px}
+.hn{padding:2px 7px;border-radius:3px;font-size:11px;font-weight:500;font-family:var(--font-mono)}
+.hn-b{background:#FAEEDA;color:#854F0B}
+.hn-s{background:#FCEBEB;color:#A32D2D}
+.hn-a{background:#E6F1FB;color:#185FA5}
+.hn-t{background:#EAF3DE;color:#3B6D11}
+
+.piano-wrap{background:var(--color-background-primary);padding:14px 14px 16px;overflow-x:auto}
+.piano{display:flex;position:relative;height:90px;gap:0;user-select:none;width:fit-content;margin:0 auto}
+.wk{width:20px;height:90px;background:#f5f3ee;border:0.5px solid #ccc;border-radius:0 0 3px 3px;position:relative;flex-shrink:0;cursor:pointer;transition:background .1s}
+.wk:hover{background:#ede9e0}
+.bk{width:13px;height:56px;background:#1a1a1e;border-radius:0 0 2px 2px;position:absolute;top:0;z-index:2;cursor:pointer;transition:background .1s}
+.bk:hover{background:#2a2a30}
+.key-s .wk,.key-s-b .bk{background:#E24B4A}
+.key-a .wk,.key-a-b .bk{background:#378ADD}
+.key-t .wk,.key-t-b .bk{background:#639922}
+.key-b .wk,.key-b-b .bk{background:#BA7517}
+.key-label{position:absolute;bottom:3px;left:50%;transform:translateX(-50%);font-size:8px;color:#999;font-family:var(--font-mono)}
+.key-label-lit{color:#fff !important}
+.octave-marker{position:absolute;bottom:-14px;left:50%;transform:translateX(-50%);font-size:9px;color:var(--color-text-tertiary);white-space:nowrap}
+</style>
+
+<h2 class="sr-only">M-Solfa player mockup showing score, voice controls, and interactive piano keyboard</h2>
+
+<div class="app">
+
+<div class="topbar">
+  <div class="meta">
+    <span class="meta-title">Cantique de Noël</span>
+    <span class="meta-sub">Adolphe Adam · Key: G · 6/4 · Mesure 3/8</span>
+  </div>
+  <div class="transport">
+    <div class="btn-transport" title="Stop"><i class="ti ti-player-stop" aria-hidden="true"></i></div>
+    <div class="btn-transport btn-play" id="playBtn" title="Lecture" onclick="togglePlay()"><i class="ti ti-player-play" id="playIcon" aria-hidden="true"></i></div>
+    <div class="btn-transport" title="Suivante"><i class="ti ti-player-skip-forward" aria-hidden="true"></i></div>
+  </div>
+  <div class="tempo-row">
+    <span>BPM</span>
+    <input type="range" min="40" max="160" value="80" step="1" id="bpmSlider" oninput="document.getElementById('bpmVal').textContent=this.value">
+    <span id="bpmVal" style="min-width:28px;font-weight:500;color:var(--color-text-primary)">80</span>
+  </div>
+  <div class="sel-row">
+    <select title="Tonique"><option>Sol (G)</option><option>Ré (D)</option><option>Do (C)</option><option>Fa (F)</option><option>La (A)</option></select>
+    <select title="Timbre"><option>Orgue</option><option>Piano</option><option>Cordes</option><option>Cuivres</option></select>
+  </div>
+</div>
+
+<div class="voice-strip">
+  <span style="font-size:11px;color:var(--color-text-tertiary);margin-right:4px">Voix</span>
+  <div class="voice-chip v-s" id="chip-s" onclick="toggleMute('s')"><div class="voice-dot"></div>Soprano</div>
+  <div class="voice-chip v-a" id="chip-a" onclick="toggleMute('a')"><div class="voice-dot"></div>Alto</div>
+  <div class="voice-chip v-t" id="chip-t" onclick="toggleMute('t')"><div class="voice-dot"></div>Ténor</div>
+  <div class="voice-chip v-b" id="chip-b" onclick="toggleMute('b')"><div class="voice-dot"></div>Basse</div>
+  <div style="margin-left:auto;display:flex;gap:6px;align-items:center">
+    <span style="font-size:11px;color:var(--color-text-tertiary)">Solo</span>
+    <div class="voice-chip v-s" style="padding:3px 7px" onclick="setSolo('s')">S</div>
+    <div class="voice-chip v-a" style="padding:3px 7px" onclick="setSolo('a')">A</div>
+    <div class="voice-chip v-t" style="padding:3px 7px" onclick="setSolo('t')">T</div>
+    <div class="voice-chip v-b" style="padding:3px 7px" onclick="setSolo('b')">B</div>
+  </div>
+</div>
+
+<div class="score-area">
+
+  <div class="measure-comment">// Mesure 1</div>
+  <div class="voice-row">
+    <span class="voice-label ls">S.</span>
+    <div class="beats">
+      <span class="bar-sep">|</span>
+      <div class="beat"><span class="beat-val active-s" id="b-s-1-1">m</span><span class="beat-sep">:</span><span class="beat-val" id="b-s-1-2">r</span><span class="beat-sep">:</span><span class="beat-val" id="b-s-1-3">d</span></div>
+      <span class="bar-sep">|</span>
+      <div class="beat"><span class="beat-val" id="b-s-1-4">s</span><span class="beat-sep">:</span><span class="beat-val" id="b-s-1-5">-</span><span class="beat-sep">:</span><span class="beat-val" id="b-s-1-6">-</span></div>
+      <span class="bar-sep">|</span>
+    </div>
+  </div>
+  <div class="voice-row">
+    <span class="voice-label la">A.</span>
+    <div class="beats">
+      <span class="bar-sep">|</span>
+      <div class="beat"><span class="beat-val active-a" id="b-a-1-1">d</span><span class="beat-sep">:</span><span class="beat-val" id="b-a-1-2">d</span><span class="beat-sep">:</span><span class="beat-val" id="b-a-1-3">d</span></div>
+      <span class="bar-sep">|</span>
+      <div class="beat"><span class="beat-val" id="b-a-1-4">m</span><span class="beat-sep">:</span><span class="beat-val" id="b-a-1-5">-</span><span class="beat-sep">:</span><span class="beat-val" id="b-a-1-6">-</span></div>
+      <span class="bar-sep">|</span>
+    </div>
+  </div>
+  <div class="voice-row">
+    <span class="voice-label lt">T.</span>
+    <div class="beats">
+      <span class="bar-sep">|</span>
+      <div class="beat"><span class="beat-val active-t" id="b-t-1-1">s</span><span class="beat-sep">:</span><span class="beat-val" id="b-t-1-2">f</span><span class="beat-sep">:</span><span class="beat-val" id="b-t-1-3">m</span></div>
+      <span class="bar-sep">|</span>
+      <div class="beat"><span class="beat-val" id="b-t-1-4">s</span><span class="beat-sep">:</span><span class="beat-val" id="b-t-1-5">-</span><span class="beat-sep">:</span><span class="beat-val" id="b-t-1-6">-</span></div>
+      <span class="bar-sep">|</span>
+    </div>
+  </div>
+  <div class="voice-row">
+    <span class="voice-label lb">B.</span>
+    <div class="beats">
+      <span class="bar-sep">|</span>
+      <div class="beat"><span class="beat-val active-b" id="b-b-1-1">d</span><span class="beat-sep">:</span><span class="beat-val" id="b-b-1-2">d</span><span class="beat-sep">:</span><span class="beat-val" id="b-b-1-3">d</span></div>
+      <span class="bar-sep">|</span>
+      <div class="beat"><span class="beat-val" id="b-b-1-4">d</span><span class="beat-sep">:</span><span class="beat-val" id="b-b-1-5">-</span><span class="beat-sep">:</span><span class="beat-val" id="b-b-1-6">-</span></div>
+      <span class="bar-sep">|</span>
+    </div>
+  </div>
+
+  <div class="measure-comment">// Mesure 2</div>
+  <div class="voice-row">
+    <span class="voice-label ls">S.</span>
+    <div class="beats">
+      <span class="bar-sep">|</span>
+      <div class="beat"><span class="beat-val" id="b-s-2-1">s</span><span class="beat-sep">:</span><span class="beat-val" id="b-s-2-2">-</span><span class="beat-sep">:</span><span class="beat-val" id="b-s-2-3">-</span></div>
+      <span class="bar-sep">|</span>
+      <div class="beat"><span class="beat-val" id="b-s-2-4">f</span><span class="beat-sep">:</span><span class="beat-val" id="b-s-2-5">s</span><span class="beat-sep">:</span><span class="beat-val" id="b-s-2-6">l</span></div>
+      <span class="bar-sep">|</span>
+    </div>
+  </div>
+  <div class="voice-row">
+    <span class="voice-label la">A.</span>
+    <div class="beats">
+      <span class="bar-sep">|</span>
+      <div class="beat"><span class="beat-val" id="b-a-2-1">m</span><span class="beat-sep">:</span><span class="beat-val" id="b-a-2-2">-</span><span class="beat-sep">:</span><span class="beat-val" id="b-a-2-3">-</span></div>
+      <span class="bar-sep">|</span>
+      <div class="beat"><span class="beat-val" id="b-a-2-4">d</span><span class="beat-sep">:</span><span class="beat-val" id="b-a-2-5">d</span><span class="beat-sep">:</span><span class="beat-val" id="b-a-2-6">d</span></div>
+      <span class="bar-sep">|</span>
+    </div>
+  </div>
+  <div class="voice-row">
+    <span class="voice-label lt">T.</span>
+    <div class="beats">
+      <span class="bar-sep">|</span>
+      <div class="beat"><span class="beat-val" id="b-t-2-1">s</span><span class="beat-sep">:</span><span class="beat-val" id="b-t-2-2">-</span><span class="beat-sep">:</span><span class="beat-val" id="b-t-2-3">-</span></div>
+      <span class="bar-sep">|</span>
+      <div class="beat"><span class="beat-val" id="b-t-2-4">l</span><span class="beat-sep">:</span><span class="beat-val" id="b-t-2-5">m</span><span class="beat-sep">:</span><span class="beat-val" id="b-t-2-6">f</span></div>
+      <span class="bar-sep">|</span>
+    </div>
+  </div>
+  <div class="voice-row">
+    <span class="voice-label lb">B.</span>
+    <div class="beats">
+      <span class="bar-sep">|</span>
+      <div class="beat"><span class="beat-val" id="b-b-2-1">d</span><span class="beat-sep">:</span><span class="beat-val" id="b-b-2-2">-</span><span class="beat-sep">:</span><span class="beat-val" id="b-b-2-3">-</span></div>
+      <span class="bar-sep">|</span>
+      <div class="beat"><span class="beat-val" id="b-b-2-4">d</span><span class="beat-sep">:</span><span class="beat-val" id="b-b-2-5">d</span><span class="beat-sep">:</span><span class="beat-val" id="b-b-2-6">d</span></div>
+      <span class="bar-sep">|</span>
+    </div>
+  </div>
+
+  <div class="measure-comment">// Mesures 3 & 4</div>
+  <div class="voice-row">
+    <span class="voice-label ls">S.</span>
+    <div class="beats">
+      <span class="bar-sep">|</span>
+      <div class="beat"><span class="beat-val" id="b-s-3-1">s</span><span class="beat-sep">:</span><span class="beat-val" id="b-s-3-2">-</span><span class="beat-sep">:</span><span class="beat-val" id="b-s-3-3">-</span></div>
+      <span class="bar-sep">|</span>
+      <div class="beat"><span class="beat-val" id="b-s-3-4">s.f</span><span class="beat-sep">:</span><span class="beat-val" id="b-s-3-5">m</span><span class="beat-sep">:</span><span class="beat-val" id="b-s-3-6">d'</span></div>
+      <span class="bar-sep">|</span>
+    </div>
+  </div>
+  <div class="voice-row">
+    <span class="voice-label la">A.</span>
+    <div class="beats">
+      <span class="bar-sep">|</span>
+      <div class="beat"><span class="beat-val" id="b-a-3-1">d</span><span class="beat-sep">:</span><span class="beat-val" id="b-a-3-2">-</span><span class="beat-sep">:</span><span class="beat-val" id="b-a-3-3">-</span></div>
+      <span class="bar-sep">|</span>
+      <div class="beat"><span class="beat-val" id="b-a-3-4">m.r</span><span class="beat-sep">:</span><span class="beat-val" id="b-a-3-5">d</span><span class="beat-sep">:</span><span class="beat-val" id="b-a-3-6">m</span></div>
+      <span class="bar-sep">|</span>
+    </div>
+  </div>
+  <div class="voice-row">
+    <span class="voice-label lt">T.</span>
+    <div class="beats">
+      <span class="bar-sep">|</span>
+      <div class="beat"><span class="beat-val" id="b-t-3-1">m</span><span class="beat-sep">:</span><span class="beat-val" id="b-t-3-2">-</span><span class="beat-sep">:</span><span class="beat-val" id="b-t-3-3">-</span></div>
+      <span class="bar-sep">|</span>
+      <div class="beat"><span class="beat-val" id="b-t-3-4">s</span><span class="beat-sep">:</span><span class="beat-val" id="b-t-3-5">s,</span><span class="beat-sep">:</span><span class="beat-val" id="b-t-3-6">s</span></div>
+      <span class="bar-sep">|</span>
+    </div>
+  </div>
+  <div class="voice-row">
+    <span class="voice-label lb">B.</span>
+    <div class="beats">
+      <span class="bar-sep">|</span>
+      <div class="beat"><span class="beat-val" id="b-b-3-1">d</span><span class="beat-sep">:</span><span class="beat-val" id="b-b-3-2">-</span><span class="beat-sep">:</span><span class="beat-val" id="b-b-3-3">-</span></div>
+      <span class="bar-sep">|</span>
+      <div class="beat"><span class="beat-val" id="b-b-3-4">d.</span><span class="beat-sep">:</span><span class="beat-val" id="b-b-3-5">d</span><span class="beat-sep">:</span><span class="beat-val" id="b-b-3-6">d</span></div>
+      <span class="bar-sep">|</span>
+    </div>
+  </div>
+
+</div>
+
+<div class="progress-bar-wrap">
+  <div class="progress-track" onclick="seek(event,this)">
+    <div class="progress-fill" id="progressFill"></div>
+  </div>
+</div>
+
+<div class="help-banner">
+  <div>
+    <span class="hand-label">Main gauche (1 doigt)</span>
+    <div class="hand-notes" style="display:inline-flex">
+      <span class="hn hn-b" id="hl-left">Sol</span>
+    </div>
+  </div>
+  <div style="width:0.5px;height:20px;background:var(--color-border-tertiary)"></div>
+  <div>
+    <span class="hand-label">Main droite (3 doigts)</span>
+    <div class="hand-notes" id="hl-right">
+      <span class="hn hn-s">Si</span>
+      <span class="hn hn-a">Sol</span>
+      <span class="hn hn-t">Ré</span>
+    </div>
+  </div>
+</div>
+
+<div class="piano-wrap">
+<div class="piano" id="pianoKeys"></div>
+</div>
+
+</div>
+
+<script>
+const KEYS = [
+  {n:'C2',w:true},{n:'C#2',w:false},{n:'D2',w:true},{n:'D#2',w:false},{n:'E2',w:true},
+  {n:'F2',w:true},{n:'F#2',w:false},{n:'G2',w:true},{n:'G#2',w:false},{n:'A2',w:true},{n:'A#2',w:false},{n:'B2',w:true},
+  {n:'C3',w:true},{n:'C#3',w:false},{n:'D3',w:true},{n:'D#3',w:false},{n:'E3',w:true},
+  {n:'F3',w:true},{n:'F#3',w:false},{n:'G3',w:true},{n:'G#3',w:false},{n:'A3',w:true},{n:'A#3',w:false},{n:'B3',w:true},
+  {n:'C4',w:true},{n:'C#4',w:false},{n:'D4',w:true},{n:'D#4',w:false},{n:'E4',w:true},
+  {n:'F4',w:true},{n:'F#4',w:false},{n:'G4',w:true},{n:'G#4',w:false},{n:'A4',w:true},{n:'A#4',w:false},{n:'B4',w:true},
+  {n:'C5',w:true},{n:'C#5',w:false},{n:'D5',w:true},{n:'D#5',w:false},{n:'E5',w:true},
+  {n:'F5',w:true},{n:'F#5',w:false},{n:'G5',w:true}
+];
+
+const STEPS = [
+  {beat:1,s:'G4',a:'E4',t:'B3',b:'G2'},
+  {beat:2,s:'F#4',a:'D4',t:'A3',b:'G2'},
+  {beat:3,s:'E4',a:'C4',t:'G3',b:'G2'},
+  {beat:4,s:'B4',a:'G4',t:'D4',b:'G2'},
+  {beat:5,s:'B4',a:'G4',t:'D4',b:'G2'},
+  {beat:6,s:'B4',a:'G4',t:'D4',b:'G2'},
+];
+
+let playing = false;
+let currentBeat = 0;
+let timer = null;
+let progress = 0;
+let muted = {s:false,a:false,t:false,b:false};
+let solo = null;
+
+const allBeats = [
+  {m:1,b:1},{m:1,b:2},{m:1,b:3},{m:1,b:4},{m:1,b:5},{m:1,b:6},
+  {m:2,b:1},{m:2,b:2},{m:2,b:3},{m:2,b:4},{m:2,b:5},{m:2,b:6},
+  {m:3,b:1},{m:3,b:2},{m:3,b:3},{m:3,b:4},{m:3,b:5},{m:3,b:6},
+];
+const total = allBeats.length;
+
+function buildPiano(){
+  const piano = document.getElementById('pianoKeys');
+  let whites = [];
+  KEYS.forEach((k,i)=>{ if(k.w) whites.push({k,i}); });
+  let wIdx = 0;
+  whites.forEach(({k,i},wi)=>{
+    const wDiv = document.createElement('div');
+    wDiv.className='wk';
+    wDiv.id='key-'+k.n;
+    if(k.n==='C2'||k.n==='C3'||k.n==='C4'||k.n==='C5'){
+      const lbl = document.createElement('span');
+      lbl.className='octave-marker';
+      lbl.textContent=k.n;
+      wDiv.appendChild(lbl);
+    }
+    piano.appendChild(wDiv);
+    const next = KEYS[i+1];
+    if(next && !next.w){
+      const bDiv = document.createElement('div');
+      bDiv.className='bk';
+      bDiv.id='key-'+next.n;
+      bDiv.style.left=(wi*20+13)+'px';
+      piano.appendChild(bDiv);
+    }
+  });
+}
+
+function lightKeys(notes){
+  document.querySelectorAll('.wk,.bk').forEach(el=>{
+    el.className = el.className.replace(/key-[satb](-b)?/g,'').trim();
+    el.querySelectorAll('.key-label-lit').forEach(l=>l.classList.remove('key-label-lit'));
+  });
+  const map = {s:'s',a:'a',t:'t',b:'b'};
+  Object.entries(notes).forEach(([voice,note])=>{
+    if(!note) return;
+    if(solo && solo!==voice) return;
+    if(muted[voice]) return;
+    const el = document.getElementById('key-'+note);
+    if(el){
+      const isBlack = !el.classList.contains('wk');
+      el.classList.add(isBlack ? 'key-'+map[voice]+'-b' : 'key-'+map[voice]);
+    }
+  });
+}
+
+function clearHighlight(){
+  document.querySelectorAll('.beat-val').forEach(el=>{
+    el.className='beat-val';
+  });
+}
+
+function highlightBeat(m,b){
+  clearHighlight();
+  ['s','a','t','b'].forEach(v=>{
+    const el = document.getElementById('b-'+v+'-'+m+'-'+b);
+    if(el){
+      if(solo && solo!==v) return;
+      if(muted[v]) return;
+      el.classList.add('active-'+v);
+    }
+  });
+}
+
+const pianoStates = [
+  {s:'B4',a:'G4',t:'D4',b:'G2'},
+  {s:'A4',a:'F#4',t:'C4',b:'G2'},
+  {s:'G4',a:'E4',t:'B3',b:'G2'},
+  {s:'D5',a:'B4',t:'G4',b:'G2'},
+  {s:'D5',a:'B4',t:'G4',b:'G2'},
+  {s:'D5',a:'B4',t:'G4',b:'G2'},
+  {s:'D5',a:'B4',t:'G4',b:'G2'},
+  {s:'D5',a:'B4',t:'G4',b:'G2'},
+  {s:'D5',a:'B4',t:'G4',b:'G2'},
+  {s:'C5',a:'A4',t:'F4',b:'G2'},
+  {s:'D5',a:'B4',t:'G4',b:'G2'},
+  {s:'E5',a:'C5',t:'G4',b:'G2'},
+  {s:'D5',a:'B4',t:'G4',b:'G2'},
+  {s:'D5',a:'B4',t:'G4',b:'G2'},
+  {s:'D5',a:'B4',t:'G4',b:'G2'},
+  {s:'A4',a:'F#4',t:'D4',b:'G2'},
+  {s:'G4',a:'E4',t:'B3',b:'G2'},
+  {s:'D5',a:'B4',t:'G4',b:'G2'},
+];
+
+const bannerStates = [
+  {l:'Sol',r:[{c:'hn-s',n:'Si'},{c:'hn-a',n:'Sol'},{c:'hn-t',n:'Ré'}]},
+  {l:'Sol',r:[{c:'hn-s',n:'La'},{c:'hn-a',n:'Fa#'},{c:'hn-t',n:'Do'}]},
+  {l:'Sol',r:[{c:'hn-s',n:'Sol'},{c:'hn-a',n:'Mi'},{c:'hn-t',n:'Si'}]},
+  {l:'Sol',r:[{c:'hn-s',n:'Ré'},{c:'hn-a',n:'Si'},{c:'hn-t',n:'Sol'}]},
+  {l:'Sol',r:[{c:'hn-s',n:'Ré'},{c:'hn-a',n:'Si'},{c:'hn-t',n:'Sol'}]},
+  {l:'Sol',r:[{c:'hn-s',n:'Ré'},{c:'hn-a',n:'Si'},{c:'hn-t',n:'Sol'}]},
+  {l:'Sol',r:[{c:'hn-s',n:'Ré'},{c:'hn-a',n:'Si'},{c:'hn-t',n:'Sol'}]},
+  {l:'Sol',r:[{c:'hn-s',n:'Ré'},{c:'hn-a',n:'Si'},{c:'hn-t',n:'Sol'}]},
+  {l:'Sol',r:[{c:'hn-s',n:'Ré'},{c:'hn-a',n:'Si'},{c:'hn-t',n:'Sol'}]},
+  {l:'Sol',r:[{c:'hn-s',n:'Do'},{c:'hn-a',n:'La'},{c:'hn-t',n:'Fa'}]},
+  {l:'Sol',r:[{c:'hn-s',n:'Ré'},{c:'hn-a',n:'Si'},{c:'hn-t',n:'Sol'}]},
+  {l:'Sol',r:[{c:'hn-s',n:'Mi'},{c:'hn-a',n:'Do'},{c:'hn-t',n:'Sol'}]},
+  {l:'Sol',r:[{c:'hn-s',n:'Ré'},{c:'hn-a',n:'Si'},{c:'hn-t',n:'Sol'}]},
+  {l:'Sol',r:[{c:'hn-s',n:'Ré'},{c:'hn-a',n:'Si'},{c:'hn-t',n:'Sol'}]},
+  {l:'Sol',r:[{c:'hn-s',n:'Ré'},{c:'hn-a',n:'Si'},{c:'hn-t',n:'Sol'}]},
+  {l:'Sol',r:[{c:'hn-s',n:'La'},{c:'hn-a',n:'Fa#'},{c:'hn-t',n:'Ré'}]},
+  {l:'Sol',r:[{c:'hn-s',n:'Sol'},{c:'hn-a',n:'Mi'},{c:'hn-t',n:'Si'}]},
+  {l:'Sol',r:[{c:'hn-s',n:'Ré'},{c:'hn-a',n:'Si'},{c:'hn-t',n:'Sol'}]},
+];
+
+function updateBanner(idx){
+  const st = bannerStates[Math.min(idx,bannerStates.length-1)];
+  document.getElementById('hl-left').textContent = st.l;
+  const right = document.getElementById('hl-right');
+  right.innerHTML = st.r.map(n=>`<span class="hn ${n.c}">${n.n}</span>`).join('');
+}
+
+function tick(){
+  if(!playing) return;
+  const pos = allBeats[currentBeat];
+  highlightBeat(pos.m, pos.b);
+  lightKeys(pianoStates[currentBeat]);
+  updateBanner(currentBeat);
+  progress = (currentBeat+1)/total*100;
+  document.getElementById('progressFill').style.width = Math.round(progress)+'%';
+  currentBeat = (currentBeat+1) % total;
+  const bpm = parseInt(document.getElementById('bpmSlider').value);
+  const ms = Math.round(60000/bpm);
+  timer = setTimeout(tick, ms);
+}
+
+function togglePlay(){
+  playing = !playing;
+  const icon = document.getElementById('playIcon');
+  const btn = document.getElementById('playBtn');
+  if(playing){
+    icon.className='ti ti-player-pause';
+    btn.style.background='#0F6E56';
+    btn.style.borderColor='#0F6E56';
+    tick();
+  } else {
+    icon.className='ti ti-player-play';
+    btn.style.background='#1D9E75';
+    btn.style.borderColor='#1D9E75';
+    clearTimeout(timer);
+  }
+}
+
+function seek(e, track){
+  const rect = track.getBoundingClientRect();
+  const pct = Math.max(0,Math.min(1,(e.clientX-rect.left)/rect.width));
+  currentBeat = Math.floor(pct*total);
+  document.getElementById('progressFill').style.width = Math.round(pct*100)+'%';
+  if(!playing){
+    const pos = allBeats[currentBeat];
+    highlightBeat(pos.m, pos.b);
+    lightKeys(pianoStates[currentBeat]);
+    updateBanner(currentBeat);
+  }
+}
+
+function toggleMute(v){
+  muted[v] = !muted[v];
+  document.getElementById('chip-'+v).classList.toggle('muted', muted[v]);
+}
+
+function setSolo(v){
+  solo = solo===v ? null : v;
+  ['s','a','t','b'].forEach(x=>{
+    const chip = document.querySelector('.voice-strip .v-'+x+':first-of-type');
+  });
+}
+
+buildPiano();
+highlightBeat(1,1);
+lightKeys(pianoStates[0]);
+</script>
