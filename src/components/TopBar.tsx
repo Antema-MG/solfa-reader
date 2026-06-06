@@ -3,6 +3,7 @@ import { TONICS } from '../lib/pitch'
 
 const TIMBRES: [Timbre, string][] = [
   ['organ','Orgue'], ['piano','Piano'], ['strings','Cordes'], ['brass','Cuivres'],
+  ['flute','Flûte'], ['bell','Cloche'], ['guitar','Guitare'],
 ]
 
 interface Props { player: MsolfaPlayerState }

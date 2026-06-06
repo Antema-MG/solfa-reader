@@ -1,8 +1,8 @@
 import type { MsolfaPlayerState, Voice } from '../types'
 import { midiToFrenchName } from '../lib/pitch'
 
-const PIANO_LOW  = 36  // C2
-const PIANO_HIGH = 79  // G5
+const PIANO_LOW  = 24  // C1
+const PIANO_HIGH = 84  // C6
 const WHITE_NOTES = ['C','D','E','F','G','A','B']
 const WHITE_SEMIS = [0,2,4,5,7,9,11]
 const HAS_BLACK   = new Set(['C','D','F','G','A'])
@@ -14,7 +14,7 @@ function buildKeys() {
   const whites: WKey[] = []
   const blacks: BKey[] = []
   let wIdx = 0
-  for (let oct = 2; oct <= 5; oct++) {
+  for (let oct = 1; oct <= 6; oct++) {
     WHITE_NOTES.forEach((note, ni) => {
       const midi = (oct + 1) * 12 + WHITE_SEMIS[ni]
       if (midi > PIANO_HIGH) return

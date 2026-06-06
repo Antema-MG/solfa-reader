@@ -1,6 +1,6 @@
 export type Voice   = 'S' | 'A' | 'T' | 'B'
 export type Status  = 'stopped' | 'playing' | 'paused'
-export type Timbre  = 'organ' | 'piano' | 'strings' | 'brass'
+export type Timbre  = 'organ' | 'piano' | 'strings' | 'brass' | 'flute' | 'bell' | 'guitar'
 
 // ── Parser types ────────────────────────────────────────────
 export interface NoteElement { kind: 'note'; degree: string; chromatic: number; octave: string; dur: number }

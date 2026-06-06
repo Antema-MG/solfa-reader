@@ -13,6 +13,12 @@ const TIMBRES: Record<Timbre, TimbreCfg> = {
   piano:   { type: 'triangle', a: 0.005, d: 0.7,  s: 0.0,  r: 0.12 },
   strings: { type: 'sawtooth', a: 0.18,  d: 0.1,  s: 0.85, r: 0.14, filter: 2200 },
   brass:   { type: 'square',   a: 0.03,  d: 0.08, s: 0.8,  r: 0.10, filter: 3000 },
+  flute:   { type: 'sine',     a: 0.08,  d: 0.05, s: 0.85, r: 0.22,
+             harmonics: [[1,1],[2,0.12],[3,0.04]], filter: 4000 },
+  bell:    { type: 'sine',     a: 0.001, d: 1.6,  s: 0.0,  r: 0.9,
+             harmonics: [[1,1],[2.75,0.4],[4.07,0.25],[5.51,0.12]] },
+  guitar:  { type: 'triangle', a: 0.001, d: 0.35, s: 0.0,  r: 0.18,
+             harmonics: [[1,1],[2,0.5],[3,0.25],[4,0.1]] },
 }
 
 export class AudioEngine {

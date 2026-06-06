@@ -2,11 +2,24 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import type { MsolfaPlayerState, Voice, Timbre, Status, Score, NoteEvent } from '../types'
 import { parseMsolfa }  from '../lib/parser'
 import { AudioEngine }  from '../lib/audioEngine'
-import { degreeToMidi, midiToFreq, VOICE_BASE_OCTAVE } from '../lib/pitch'
+import { degreeToMidi, midiToFreq, VOICE_BASE_OCTAVE, computePianoMidis, NoteSpec } from '../lib/pitch'
 import { DEFAULT_PIECE } from '../lib/defaults'
 
 const VOICES: Voice[] = ['S', 'A', 'T', 'B']
 const LOOK = 0.06   // audio lookahead in seconds
+
+function specsAtBeat(events: NoteEvent[], beat: number): Partial<Record<string, NoteSpec>> {
+  const latest: Partial<Record<Voice, NoteEvent>> = {}
+  for (const ev of events) {
+    if (ev.start <= beat && beat < ev.start + ev.durBeats)
+      if (!latest[ev.voice] || ev.start > latest[ev.voice]!.start) latest[ev.voice] = ev
+  }
+  const specs: Partial<Record<string, NoteSpec>> = {}
+  for (const v of VOICES) {
+    if (latest[v]) specs[v] = { degree: latest[v]!.degree, chromatic: latest[v]!.chromatic, octave: latest[v]!.octave }
+  }
+  return specs
+}
 
 export function useMsolfaPlayer(): MsolfaPlayerState {
   // ── React state (drives UI) ────────────────────────────────
@@ -56,19 +69,22 @@ export function useMsolfaPlayer(): MsolfaPlayerState {
   const computeLitMidis = useCallback((beatIndex: number): Partial<Record<Voice, number>> => {
     const file = scoreRef.current
     if (!file) return {}
+    // Collect active event per voice at this beat (all voices, for placement context)
     const snd: Partial<Record<Voice, NoteEvent>> = {}
     file.events.forEach(ev => {
       if (ev.start <= beatIndex && beatIndex < ev.start + ev.durBeats)
         if (!snd[ev.voice] || ev.start > snd[ev.voice]!.start) snd[ev.voice] = ev
     })
-    const midis: Partial<Record<Voice, number>> = {}
+    // Build specs for all active voices (dynamic placement uses all, even muted)
+    const specs: Partial<Record<string, NoteSpec>> = {}
     VOICES.forEach(v => {
       const ev = snd[v]
-      if (!ev || !isAudible(v)) return
-      let midi = degreeToMidi(ev.degree, ev.octave, ev.chromatic, tonicRef.current, VOICE_BASE_OCTAVE[v])
-      if (v === 'T') { while (midi < 48) midi += 12 }   // tenor display: bump above C3
-      midis[v] = midi
+      if (ev) specs[v] = { degree: ev.degree, chromatic: ev.chromatic, octave: ev.octave }
     })
+    const all = computePianoMidis(specs, tonicRef.current)
+    // Only expose audible voices in output
+    const midis: Partial<Record<Voice, number>> = {}
+    VOICES.forEach(v => { if (all[v] != null && isAudible(v)) midis[v] = all[v] })
     return midis
   }, [isAudible])
 
@@ -90,7 +106,9 @@ export function useMsolfaPlayer(): MsolfaPlayerState {
       const effEnd   = Math.min(evEnd, upper)
       const durSec   = (effEnd - effStart) * spb
       if (durSec <= 0) return
-      const midi = degreeToMidi(ev.degree, ev.octave, ev.chromatic, tonicRef.current, VOICE_BASE_OCTAVE[ev.voice])
+      const allMidis = computePianoMidis(specsAtBeat(file.events, ev.start), tonicRef.current)
+      const midi = allMidis[ev.voice]
+        ?? degreeToMidi(ev.degree, ev.octave, ev.chromatic, tonicRef.current, VOICE_BASE_OCTAVE[ev.voice])
       engine.scheduleNote(ev.voice, midiToFreq(midi), base + (effStart - posBeats) * spb, durSec)
     })
   }, [secondsPerBeat])
