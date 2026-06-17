@@ -49,8 +49,38 @@ S. || mesure1 | mesure2 || mesure3 | mesure4 ||
 - `|` sépare les mesures dans la phrase
 - `||` ferme la phrase ET ouvre la suivante simultanément
 - `||` final ferme la dernière phrase
-- **Une seule ligne par voix** dans un bloc
-- **Pas d'indentation** ni d'alinéa
+- **Une seule ligne par voix** dans un bloc (pas de retour à la ligne à l'intérieur d'un bloc)
+
+### Découpage par phrase (obligatoire pour les pièces longues)
+
+Pour toute pièce de plusieurs phrases, **chaque phrase = un bloc séparé** :
+
+```
+// Phrase 1
+S. || mesure1 | mesure2 ||
+A. || mesure1 | mesure2 ||
+T. || mesure1 | mesure2 ||
+B. || mesure1 | mesure2 ||
+W. paroles phrase 1
+
+// Phrase 2
+S. || mesure3 | mesure4 ||
+A. || mesure3 | mesure4 ||
+...
+```
+
+**Ne pas écrire** toute une pièce sur une seule ligne par voix — c'est illisible et ne reflète pas la structure des partitions. Voir §12 pour l'anti-patron correspondant.
+
+### Barres dans une partition PDF
+
+Les partitions imprimées utilisent deux types de barres visuelles :
+
+| Type | Aspect | Rôle en msolfa |
+|---|---|---|
+| Barre **discontinue** (tirets) | ╌╌╌ | Séparateur de **demi-mesure** — visuel uniquement, ignoré |
+| Barre **continue** (trait plein) | ─── | Vraie barre de mesure → `\|` en msolfa |
+
+> 1 mesure msolfa = contenu entre 2 barres **continues** = 2 demi-mesures PDF.
 
 ---
 
@@ -91,24 +121,9 @@ Les voix **manquantes sont tolérées** — remplacées par des silences automat
 
 ## 4. SÉPARATION DES BLOCS (PHRASES)
 
-Un **bloc** = un groupe de lignes de voix jouées simultanément.  
-Deux façons de séparer les blocs :
+Un **bloc** = un groupe de lignes de voix jouées simultanément (une phrase musicale).
 
-### Option A — Ligne vide (recommandée)
-
-```
-|| mesure1 | mesure2 ||
-|| mesure1 | mesure2 ||
-|| mesure1 | mesure2 ||
-|| mesure1 | mesure2 ||
-
-|| mesure3 | mesure4 ||
-|| mesure3 | mesure4 ||
-|| mesure3 | mesure4 ||
-|| mesure3 | mesure4 ||
-```
-
-### Option B — Commentaire `//`
+### Format recommandé — `//` + ligne vide
 
 ```
 // Phrase 1
@@ -116,13 +131,42 @@ S. || mesure1 | mesure2 ||
 A. || mesure1 | mesure2 ||
 T. || mesure1 | mesure2 ||
 B. || mesure1 | mesure2 ||
+W. paroles correspondantes
 
 // Phrase 2
 S. || mesure3 | mesure4 ||
-...
+A. || mesure3 | mesure4 ||
+T. || mesure3 | mesure4 ||
+B. || mesure3 | mesure4 ||
+W. paroles correspondantes
 ```
 
-Les deux formes peuvent être **mélangées** dans un même fichier.
+Ce format **reflète directement la structure des partitions PDF** — une portée = un bloc.
+
+### Option minimale — ligne vide seule
+
+```
+|| mesure1 | mesure2 ||
+|| mesure1 | mesure2 ||
+|| mesure1 | mesure2 ||
+|| mesure1 | mesure2 ||
+
+|| mesure3 | mesure4 ||
+|| mesure3 | mesure4 ||
+|| mesure3 | mesure4 ||
+|| mesure3 | mesure4 ||
+```
+
+> **Pièce avec anacrouse — deux styles valides :**
+>
+> **Style A — Continuation** (recommandé) : les transitions entre phrases s'écrivent sur **la même ligne**. La fin de la phrase N (close, N-k temps) et le début de la phrase N+1 (open, k temps) forment ensemble **1 mesure complète** séparée par `||`. Pas de ligne vide ni de `//` à cet endroit. Ce style reflète la continuité musicale de l'anacrouse.
+> ```
+> ... | close || open | ...
+> ```
+>
+> **Style B — Blocs indépendants** : chaque phrase est un bloc séparé ; les phrases suivantes commencent directement sur le premier temps fort (sans anacrouse de liaison). Un `//` et une ligne vide séparent les blocs.
+>
+> Voir §10 pour les règles complètes de mesures fantômes et transitions.
 
 ---
 
@@ -285,18 +329,106 @@ Un `.` en **position initiale** (aucune note avant) = silence comme premier demi
 
 ---
 
-## 10. ANACROUSE
+## 10. ANACROUSE ET MESURES FANTÔMES
 
-Une mesure incomplète en début de phrase s'indique avec `:` précédant la première note :
+### Principe
+
+Quand une pièce débute par une levée (anacrusis), la première mesure du fichier est incomplète.  
+**Règle obligatoire :** ajouter une **mesure fantôme** au tout début du fichier ET une mesure fantôme **complémentaire** à la toute fin du fichier.
+
+> Ces deux mesures fantômes existent **une seule fois** — au début absolu et à la fin absolue du fichier. Les transitions entre phrases intérieures ne sont **pas** des mesures fantômes (voir §10 Transitions).
+
+### Mesure fantôme de début (début absolu du fichier)
+
+Remplir avec des silences `-` jusqu'à la note de levée :
 
 ```
-S. || :m | r:d ||
-      ↑ anacrouse (1 temps avant le temps fort)
+4/4, levée 1 temps :  || - : - : - : m  | [musique] ...
+3/4, levée 1 temps :  || - : - : m      | [musique] ...
+4/4, levée 2 temps :  || - : - : m : m  | [musique] ...
+3/4, levée 2 temps :  || - : m : m      | [musique] ...
 ```
 
-En `3/4` avec anacrouse de 1 temps :
+### Mesure fantôme de fin (fin absolue du fichier)
+
+La fin complète la symétrie — N-k temps de silences après la dernière note :
+
 ```
-S. || :d | r:m:f ||
+4/4, levée 1 temps :  ... | d : - : - : - ||
+3/4, levée 1 temps :  ... | d : - : - ||
+3/4, levée 2 temps :  ... | d : - ||
+```
+
+> **Les deux mesures fantômes sont complémentaires** — ensemble elles totalisent exactement N temps (1 mesure complète).
+
+### Exemple complet en `4/4` — levée 1 temps
+
+```
+S. || - : - : - : m | m : m : f : m | m : - : r : d | d : l, : s : f | m : - : - : - ||
+A. || - : - : - : d | d : d : d : d | d : - : t, : d | l, : d : d : t, | d : - : - : - ||
+T. || - : - : - : s | s : s : l : s | s : - : s : s | s : r : m : s | s : - : - : - ||
+B. || - : - : - : d | d : d : d : d | s, : - : f, : m, | f, : f, : s, : s, | d : - : - : - ||
+```
+
+### Exemple complet en `3/4` — levée 1 temps (avec paires de croches)
+
+```
+S. || - : - : d.r | m.f : m : d.m | r.r : d : t, | d : - : t,.d | r.m : r : t,.r | d.d : t, : l, | - : - : - ||
+A. || - : - : d   | d.d : d : d   | l,.l : s, : s, | s, : - : s,.l, | t,.d : t, : s,.t, | l,.l, : s, : fi, | - : - : - ||
+T. || - : - : m.f | s.l : s : m.s | f.f : m : r  | m : - : r    | s.s : s : s  | m.m : r : d  | - : - : - ||
+B. || - : - : m.r | d.d : d : d   | f,.f, : s, : s, | d : - : s,  | s,.s, : s, : s, | l,.l, : r, : r, | - : - : - ||
+```
+
+### Transitions entre phrases consécutives (non fantômes)
+
+Les phrases 2, 3, 4, 5… sont la **continuité** de la phrase précédente — pas un nouveau départ. Il n'y a **jamais** de nouvelle mesure fantôme entre phrases.
+
+Quand une phrase se termine par un fragment de N-k temps (close) et que la suivante débute par k temps (open), ces deux fragments forment **1 mesure complète** — ce n'est **pas** une mesure fantôme.
+
+**Règle : écrire sur une seule ligne.** Le `||` de transition s'inscrit dans le cours normal de la ligne — pas de saut de ligne ni de bloc séparé entre le close et le open.
+
+Règle valable pour **toutes les métriques** — close (N-k temps) + open (k temps) = N temps = 1 mesure complète :
+
+| Mesure | k | Close | Open | Total |
+|---|---|---|---|---|
+| `2/4` | 1 | `m` (1t) | `r,` (1t) | 2t ✓ |
+| `3/4` | 1 | `m : -` (2t) | `r,` (1t) | 3t ✓ |
+| `3/4` | 2 | `m` (1t) | `r, : d` (2t) | 3t ✓ |
+| `4/4` | 1 | `m : - : -` (3t) | `r,` (1t) | 4t ✓ |
+| `4/4` | 2 | `m : -` (2t) | `r, : d` (2t) | 4t ✓ |
+| `6/4` | 2 | `m : - : - : -` (4t) | `r, : d` (2t) | 6t ✓ |
+
+En msolfa, le `||` se pose entre close et open — pas de coupure musicale :
+
+```
+... | close || open | ...
+```
+
+```
+// CORRECT — transition sur une ligne (valable toutes métriques)
+S. || phantom | ... | close || open | ... | close ||
+//                    (N-k)↑↑(k)           (N-k)↑↑ fin absolue
+
+// INCORRECT — transition découpée en blocs séparés
+S. || phantom | ... | close ||
+
+S. || open | ... | close ||
+```
+
+- Les mesures fantômes n'existent **qu'au début absolu** et **à la fin absolue** du fichier entier
+
+### Phrases sans anacrouse
+
+Aucune mesure fantôme — la phrase commence directement sur le premier temps fort :
+
+```
+S. || d : r : m : f | s : - : - : - ||
+```
+
+### Ancien format `:` initial (toléré, déprécié)
+
+```
+S. || :m | r:d ||   ← encore accepté par le parser, non recommandé
 ```
 
 ---
@@ -333,6 +465,32 @@ S. || d:r | m:f |          ← phrase non fermée
 || m:m:s:l ||
 || d:d:d:d ||
 || extra ligne ||           ← 5 lignes dans un bloc, max 4
+
+// ERREUR — mesure fantôme absente avec anacrouse
+S. || :m | m:m:f:m | m:-:r:d ||   ← format déprécié, phantom manquant
+
+// CORRECT — avec mesures fantômes
+S. || - : - : - : m | m : m : f : m | m : - : r : d | ... | - : - : - : - ||
+
+// ─── ANTI-PATRON : toute la pièce sur une seule ligne par voix ───────────────
+
+// MAUVAIS — illisible, impossible à maintenir, ne reflète pas la structure PDF
+S. || - : m : m : m | f : m : m : - | r : d : d : l | s : f : m : - || f : s : d' : - | d' : t : t : - | ...
+A. || - : d : d : d | d : d : d : - | t, : d : l, : d | d : t, : d : - || t, : d : d : - | d : r : r : - | ...
+T. || - : s : s : s | l : s : s : - | s : s : r : r | m : s : s : - || s : s : s : - | si : si : si : - | ...
+B. || - : d : d : d | d : d : s, : - | f, : m, : f, : f, | s, : s, : d : - || r : m : m : - | m : m, : f, : - | ...
+
+// BON — une phrase par bloc, une voix par ligne, commentaires pour nommer les phrases
+// Phrase 1
+S. || - : - : - : m | m : m : f : m | m : - : r : d | d : l : s : f ||
+A. || - : - : - : d | d : d : d : d | d : - : t, : d | l, : d : d : t, ||
+T. || - : - : - : s | s : s : l : s | s : - : s : s | r : r : m : s ||
+B. || - : - : - : d | d : d : d : d | s, : - : f, : m, | f, : f, : s, : s, ||
+W. Paroles de la phrase 1
+
+// Phrase 2
+S. || m : - : - : f | s : d' : d' : t | t : - : l : s | f : s : m : d ||
+...
 ```
 
 > **Espaces tolérés** : `d '` est maintenant accepté (interprété `d'`).  
@@ -342,14 +500,77 @@ S. || d:r | m:f |          ← phrase non fermée
 
 ## 13. RÉSUMÉ SYNTAXIQUE
 
-```
-[EN-TÊTE — tout optionnel, défauts : C / auto / vide / vide / 80 BPM]
+### Structure recommandée — pièce multi-phrases
 
-S. || t1:t2 | t1:t2 || t1:t2 | t1:t2 ||
-A. || t1:t2 | t1:t2 || t1:t2 | t1:t2 ||
-T. || t1:t2 | t1:t2 || t1:t2 | t1:t2 ||
-B. || t1:t2 | t1:t2 || t1:t2 | t1:t2 ||
-W. [paroles optionnelles]
+```
+Key: [tonalité]
+Mesure: [N]/[D]
+Titre: [texte]
+Compositeur: [texte]
+Tempo: [n] BPM
+
+// Phrase 1 — (description optionnelle)
+S. || mesure1 | mesure2 | mesure3 | mesure4 ||
+A. || mesure1 | mesure2 | mesure3 | mesure4 ||
+T. || mesure1 | mesure2 | mesure3 | mesure4 ||
+B. || mesure1 | mesure2 | mesure3 | mesure4 ||
+W. paroles de la phrase 1
+
+// Phrase 2
+S. || mesure5 | mesure6 | mesure7 | mesure8 ||
+A. || mesure5 | mesure6 | mesure7 | mesure8 ||
+T. || mesure5 | mesure6 | mesure7 | mesure8 ||
+B. || mesure5 | mesure6 | mesure7 | mesure8 ||
+W. paroles de la phrase 2
+
+// Phrase 3
+...
+```
+
+### Avec anacrouse (4/4, levée 1 temps) — Style A : Continuation sur une ligne
+
+Les transitions entre phrases sont **liées sur la même ligne** — close (3t) + open (1t) = 1 mesure.
+
+```
+// Phrase 1 (phantom début + musique + close 3t)
+S. || - : - : - : lev | mesures... | d : - : - ||
+A. || - : - : - : lev | mesures... | d : - : - ||
+T. || - : - : - : lev | mesures... | d : - : - ||
+B. || - : - : - : lev | mesures... | d : - : - ||
+
+// suite Phrase 1 → Phrase 2 (continuation : close 3t || open 1t, sur même ligne)
+S. || lev | mesures phrase 2... | d : - : - ||
+A. || lev | mesures phrase 2... | d : - : - ||
+...
+
+// Dernière phrase (mesure fantôme de fin)
+S. || lev | mesures... | d : - : - : - ||
+A. || lev | mesures... | d : - : - : - ||
+T. || lev | mesures... | d : - : - : - ||
+B. || lev | mesures... | d : - : - : - ||
+```
+
+> Chaque `|| lev |` contient k temps (l'open) ; le `| d : - : -` avant contient N-k temps (le close). Ensemble ils forment N = 1 mesure.
+
+### Avec anacrouse (4/4, levée 1 temps) — Style B : Blocs indépendants
+
+Chaque phrase démarre sur le premier temps fort — pas de liaison anacrouse entre les blocs.
+
+```
+// Phrase 1 — anacrouse 1 temps (mesure fantôme en tête uniquement ici)
+S. || - : - : - : lev | mesures... ||
+A. || - : - : - : lev | mesures... ||
+T. || - : - : - : lev | mesures... ||
+B. || - : - : - : lev | mesures... ||
+
+// Phrase 2 (commence sur le premier temps fort)
+S. || t1 : t2 : t3 : t4 | mesures... ||
+A. || t1 : t2 : t3 : t4 | mesures... ||
+...
+
+// Dernière phrase (mesure fantôme de fin)
+S. || ... | d : - : - : - ||
+B. || ... | d : - : - : - ||
 ```
 
 ### Format minimal valide

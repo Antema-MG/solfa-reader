@@ -41,63 +41,114 @@ notes graves                              notes aiguës
 ## 3. RÈGLE FONDAMENTALE D'ATTRIBUTION
 
 ### Principe
-1. **Soprano** → toujours **doigt 5** (auriculaire, note la plus haute)
-2. Les autres voix (Alto, Ténor) s'attribuent aux doigts **4, 3, 2, 1** en ordre **décroissant de hauteur**
-3. On choisit **l'octave** de chaque voix pour **minimiser l'écart entre les doigts**
+1. **Soprano** → toujours **doigt 5** (auriculaire, note la plus haute) — ancre fixe
+2. **Alto et Ténor** : placement dynamique sous le Soprano, ordonné par degré scalaire
+3. La voix avec le **degré scalaire le plus élevé** va **au plus près du Soprano** (en-dessous)
+4. L'autre voix va **au plus près de la première** (encore en-dessous)
 
-### Règle d'octave
-> Toujours privilégier la **note la plus proche** de la note déjà placée pour compléter l'accord.
+### Règle d'octave (algorithme)
+```
+1. midiS  = Soprano (ancre, octave 4)
+2. si degré(Alto) ≥ degré(Ténor) :
+     midiA = note Alto la plus haute strictement < midiS
+     midiT = note Ténor la plus haute strictement < midiA
+   sinon :
+     midiT = note Ténor la plus haute strictement < midiS
+     midiA = note Alto  la plus haute strictement < midiT
+```
+
+Ce choix garantit que l'ordre naturel des degrés scalaires correspond à l'ordre des doigts
+sur le clavier (doigt 5 = plus aigu, doigt 1 = plus grave), sans croisement de voix.
 
 ---
 
-## 4. EXEMPLE PAS À PAS
+## 4. EXEMPLES PAS À PAS
 
-### Accord : Do(Soprano) — Mi(Alto) — Sol(Ténor)
+### Exemple A — S=do, A=mi, T=sol  (degré A=4 < degré T=7 → T placé en premier)
 
 #### Étape 1 — Placer le Soprano
 ```
-Soprano = Do → on choisit Do(C4) = doigt 5
+S = do → Do(C4) = doigt 5
 ```
 
-#### Étape 2 — Choisir l'octave du Ténor (la plus proche de C4)
+#### Étape 2 — Ténor en premier (degré sol=7 > mi=4)
 ```
-Sol possible : G2, G3, G4
-→ G3 est le plus proche de C4 par en-dessous
-→ Ténor = Sol(G3)
-```
-
-#### Étape 3 — Choisir l'octave de l'Alto (entre G3 et C4)
-```
-Mi possible : E3, E4
-→ E4 serait au-dessus de C4 → interdit (Soprano est le plus haut)
-→ E3 est entre G3 et C4 → Alto = Mi(E3)
+Sol possible : G2, G3, G4 …
+→ G3 (55) est le plus haut strictement < C4 (60)
+→ T = Sol(G3)
 ```
 
-#### Résultat correct ✓
+#### Étape 3 — Alto sous le Ténor
 ```
-Doigt 5 (auriculaire) → Do(C4)  = Soprano
-Doigt 3 (médius)      → Mi(E3)  = Alto
-Doigt 1 (pouce)       → Sol(G3) = Ténor
+Mi possible : E2, E3, E4 …
+→ E3 (52) est le plus haut strictement < G3 (55)
+→ A = Mi(E3)
 ```
 
-#### Configuration incorrecte ✗
+#### Résultat ✓
 ```
-Doigt 5 → Do(C4)   = Soprano
-Doigt 3 → Mi(E3)   = Alto
-Doigt 1 → Sol(G2)  = Ténor  ← trop grave, écart trop grand
+Doigt 5 → Do(C4)  = Soprano   (degré d=0)
+Doigt 3 → Sol(G3) = Ténor     (degré s=7)
+Doigt 1 → Mi(E3)  = Alto      (degré m=4)
+```
+
+---
+
+### Exemple B — S=la, A=do, T=ré  (degré A=0 < degré T=2 → T placé en premier)
+
+> Cas soulevé lors de la conception : d et r sont adjacents dans la gamme,
+> donc proches sur le clavier sans saut d'octave inutile.
+
+#### Étape 1 — Placer le Soprano
+```
+S = la, tonique C → La(A4, midi 69) = doigt 5
+```
+
+#### Étape 2 — Ténor en premier (degré r=2 > d=0)
+```
+Ré possible : D3(50), D4(62), D5(74) …
+→ D4 (62) est le plus haut strictement < A4 (69)
+→ T = Ré(D4)
+```
+
+#### Étape 3 — Alto sous le Ténor
+```
+Do possible : C3(48), C4(60), C5(72) …
+→ C4 (60) est le plus haut strictement < D4 (62)
+→ A = Do(C4)
+```
+
+#### Résultat ✓
+```
+Doigt 5 → La(A4)  = Soprano   (degré l=9)
+Doigt 3 → Ré(D4)  = Ténor     (degré r=2)
+Doigt 1 → Do(C4)  = Alto      (degré d=0)
+
+Écart A–T : 2 demi-tons (C4→D4) — doigts contigus, aucun saut d'octave
 ```
 
 ---
 
 ## 5. RÈGLE VISUELLE SUR LE CLAVIER
 
+### Exemple A (S=do, A=mi, T=sol)
 ```
 Touches :  So La Si Do Re Mi Fa So La Si Do Re Mi Fa So
-Octaves :  G2          C3          E3 F3 G3          C4
-                                   ↑       ↑          ↑
-                                  Ténor   Alto     Soprano
-                                  (G3)   (E3)      (C4)
-Doigts MD:                         1       3          5
+Octaves :  G2          C3       E3    G3          C4
+                                ↑      ↑           ↑
+                               Alto  Ténor      Soprano
+                               (E3)  (G3)        (C4)
+Doigts MD:                      1      3            5
+```
+
+### Exemple B (S=la, A=do, T=ré)
+```
+Touches :  … Si Do Re Mi Fa Sol La Si …
+Octaves :     C4 D4              A4
+              ↑  ↑               ↑
+             Alto Ténor       Soprano
+             (C4) (D4)         (A4)
+Doigts MD:   1    3              5
 ```
 
 ---
@@ -151,11 +202,14 @@ Doigt 1 (pouce)       → Basse médium (ex: C3)
 
 | Voix | Main | Doigt | Octave cible |
 |---|---|---|---|
-| Soprano | Droite | 5 (auriculaire) | Registre aigu du morceau |
-| Alto | Droite | 3 ou 4 | La plus proche de Soprano par en-dessous |
-| Ténor | Droite | 1 ou 2 | La plus proche de Alto par en-dessous |
+| Soprano | Droite | 5 (auriculaire) | Registre aigu — **ancre fixe** |
+| Alto ou Ténor (degré le plus haut) | Droite | 3 ou 4 | Plus haute note strictement < Soprano |
+| Alto ou Ténor (degré le plus bas)  | Droite | 1 ou 2 | Plus haute note strictement < voix du dessus |
 | Basse | Gauche | 1 (pouce) | Registre grave médium |
 | Basse doublée | Gauche | 5 + 1 | Octave grave + médium |
+
+> **Principe** : l'ordre des doigts MD reflète toujours l'ordre scalaire des degrés.
+> Il n'y a jamais de croisement de voix à la main droite.
 
 ---
 
@@ -188,6 +242,7 @@ MAIN GAUCHE
 
 ## 10. RÉSUMÉ EN UNE LIGNE
 
-> **MD doigt 5 = Soprano (toujours).  
-> Alto et Ténor aux doigts inférieurs, octave choisie par proximité décroissante.  
+> **MD doigt 5 = Soprano (ancre).  
+> Entre Alto et Ténor : degré scalaire plus haut → plus près du Soprano ; l'autre va en-dessous.  
+> Chaque voix choisit l'octave la plus haute strictement sous la voix au-dessus d'elle.  
 > MG = Basse seule ou doublée à l'octave.**

@@ -2,7 +2,10 @@
 
 > **Rappel :** toutes les métadonnées sont optionnelles (`Key`, `Mesure`, `Titre`, `Compositeur`, `Tempo`).  
 > Les préfixes de voix (`S.` `A.` `T.` `B.`) sont aussi optionnels — assignés par ordre d'apparition.  
-> Les blocs sont séparés par une **ligne vide** ou un **commentaire `//`**.
+> Les blocs sont séparés par une **ligne vide** + **commentaire `//`** (recommandé) ou ligne vide seule.  
+>  
+> **Structure obligatoire pour toute pièce de plusieurs phrases :**  
+> chaque phrase = un bloc séparé — ne jamais mettre toute la pièce sur une seule ligne par voix.
 
 ---
 
@@ -66,7 +69,8 @@ B. || d:d:d | d:d:d  || d:d:d  | d:-:-  || s,:s,:s,| s,:s,:s,|| d:-:- | -:-:- ||
 
 ## Exemple 4 — Mesure `4/4`
 
-> 4 temps par mesure, 3 `:` par bloc
+> 4 temps par mesure, 3 `:` par bloc.  
+> Structure recommandée : **un bloc par phrase**, séparé par `//` + ligne vide.
 
 ```
 Key: D
@@ -75,12 +79,38 @@ Titre: Gloire à Dieu
 Compositeur: Exemple
 Tempo: 88 BPM
 
-S. || d:r:m:s | l:s:f:m || r:m:f:s   | d':-:-:- || s:fi:s:l | ti:-:-:- || d':ti:l:s | d':-:-:- ||
-A. || s,:s,:s,:s,| f:m:d:d|| ti,:d:d:r | m:-:-:-  || r:ri:r:f | s:-:-:-  || m:r:f:m   | m:-:-:-  ||
-T. || m:f:s:s | d:d:l:s  || s:s:l:ti  | d':-:-:- || ti:li:ti:d'| r':-:-:-|| s:s:d:d   | s:-:-:-  ||
-B. || d:d:d:d | d:d:d:d  || s,:s,:s,:s,| d:-:-:-  || s,:si,:s,:s,| s,:-:-:-|| d:s,:f,:m,| d:-:-:-  ||
-W. Gloi-  re   à    Dieu  dans  les  hau-  teurs   et   paix   sur   la    ter-  re
+// Phrase 1
+S. || d:r:m:s | l:s:f:m ||
+A. || s,:s,:s,:s,| f:m:d:d||
+T. || m:f:s:s | d:d:l:s  ||
+B. || d:d:d:d | d:d:d:d  ||
+W. Gloi-  re   à    Dieu
+
+// Phrase 2
+S. || r:m:f:s   | d':-:-:- ||
+A. || ti,:d:d:r | m:-:-:-  ||
+T. || s:s:l:ti  | d':-:-:- ||
+B. || s,:s,:s,:s,| d:-:-:-  ||
+W. dans  les  hau-  teurs
+
+// Phrase 3
+S. || s:fi:s:l | ti:-:-:- ||
+A. || r:ri:r:f | s:-:-:-  ||
+T. || ti:li:ti:d'| r':-:-:-||
+B. || s,:si,:s,:s,| s,:-:-:-||
+W. et   paix   sur   la
+
+// Phrase 4
+S. || d':ti:l:s | d':-:-:- ||
+A. || m:r:f:m   | m:-:-:-  ||
+T. || s:s:d:d   | s:-:-:-  ||
+B. || d:s,:f,:m,| d:-:-:-  ||
+W. ter-  re
 ```
+
+> **Anti-patron à éviter** : écrire tout sur une seule ligne par voix.  
+> `S. || d:r:m:s | l:s:f:m || r:m:f:s | d':-:-:- || s:fi:s:l | ti:-:-:- || ...`  
+> ← illisible, difficile à maintenir, ne correspond pas aux portées d'une partition.
 
 ---
 
@@ -122,23 +152,68 @@ B. || d:d:d:d:d:- | d:d:d:d:d:- || d:d:d:d:d:- | d:-:-:-:-:- ||
 
 ---
 
-## Exemple 7 — Anacrouse en `4/4`
+## Exemple 7 — Anacrouse en `4/4` avec mesures fantômes
 
-> Mesure incomplète au début, indiquée par `:` initial
+> Levée 1 temps → mesure fantôme début (3 silences + levée) + mesure fantôme fin complémentaire.  
+> Le `|` du PDF entre groupes de 2 temps dans une mesure de 4/4 devient `:` en msolfa.
+
+```
+Key: D
+Mesure: 4/4
+Titre: Jesosy no Mpiandry
+Compositeur: S.S. Wesley
+Tempo: 84 BPM
+
+// Phrase 1
+S. || - : - : - : m | m : m : f : m | m : - : r : d | d : l, : s : f | m : - : - : - ||
+A. || - : - : - : d | d : d : d : d | d : - : t, : d | l, : d : d : t, | d : - : - : - ||
+T. || - : - : - : s | s : s : l : s | s : - : s : s | s : r : m : s | s : - : - : - ||
+B. || - : - : - : d | d : d : d : d | s, : - : f, : m, | f, : f, : s, : s, | d : - : - : - ||
+W. Je- so- sy no Mpi- a- ndry Ny fi- a- ngo- na- nay;
+```
+
+---
+
+## Exemple 7b — Anacrouse en `3/4` avec paires de croches
+
+> Levée 1 temps → mesure fantôme (2 silences + levée). Paires de croches notées `A.B`.  
+> Le `||` visuel de mi-phrase peut tomber à l'intérieur d'une mesure → devient `:` en msolfa.
+
+```
+Key: F
+Mesure: 3/4
+Titre: Avia, ry Mangetaheta O
+Compositeur: Johanesa Ambato / P.M.
+Tempo: 72 BPM
+
+// Phrase 1
+S. || - : - : d.r | m.f : m : d.m | r.r : d : t, | d : - : t,.d | r.m : r : t,.r | d.d : t, : l, | - : - : - ||
+A. || - : - : d   | d.d : d : d   | l,.l : s, : s, | s, : - : s,.l, | t,.d : t, : s,.t, | l,.l, : s, : fi, | - : - : - ||
+T. || - : - : m.f | s.l : s : m.s | f.f : m : r  | m : - : r    | s.s : s : s  | m.m : r : d  | - : - : - ||
+B. || - : - : m.r | d.d : d : d   | f,.f, : s, : s, | d : - : s,  | s,.s, : s, : s, | l,.l, : r, : r, | - : - : - ||
+W. A- via, ry ma- nge- ta- he- ta ô! Ka a- za di- a mba- ma- mo- y
+```
+
+---
+
+## Exemple 7c — Anacrouse en `3/4`, transitions multi-phrases sur une ligne
+
+> Levée 1 temps. Les transitions entre phrases (close 2t + open 1t = 3t) s'écrivent sur **une seule ligne** — pas de bloc séparé, pas de mesure fantôme intermédiaire. Seuls le début absolu et la fin absolue portent les mesures fantômes.
 
 ```
 Key: G
-Mesure: 4/4
-Titre: Jeso-sy no Mpiandry
+Mesure: 3/4
+Titre: Multi-phrases anacrouse
 Compositeur: Exemple
-Tempo: 84 BPM
+Tempo: 96 BPM
 
-S. || :m:m:m | f:m:m:- || :r.d:l | s:f | m:-:-:- ||
-A. || :d:d:d | d:d:d:- || :ti,.d:l,| d:ti,| d:-:-:- ||
-T. || :s:s:s | l:s:s:- || :s.s:r  | r:s  | s:-:-:- ||
-B. || :d:d:d | d:d:s,:-|| :fi,.m,:f,| s,:s,| d:-:-:- ||
-W. Je-so-sy   no  Mpi-a-ndry    Ny fi- a- ngo- na- nay
+S. || - : - : m | f : m : r | d : - : - || m | r : d : ti, | d : - : - || m | m : r : d | - : - : - ||
+A. || - : - : d | d : d : ti,| s, : - : - || d | ti, : s, : s, | s, : - : - || d | d : ti, : s, | - : - : - ||
+T. || - : - : s | l : s : f  | m : - : - || s | f : m : r   | m : - : - || s | s : f : m  | - : - : - ||
+B. || - : - : d | d : d : s, | d : - : - || d | s, : s, : s, | d : - : - || d | d : s, : d | - : - : - ||
 ```
+
+> **Lecture des transitions :** le `||` central ferme la phrase N et ouvre la phrase N+1 sur la même ligne. `d : -` (2t) avant `||` + `m` (1t) après `||` = 3t ✓.
 
 ---
 
