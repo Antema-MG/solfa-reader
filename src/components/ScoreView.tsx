@@ -1,18 +1,18 @@
 import { useRef, useEffect } from 'react'
 import type { Voice, MsolfaPlayerState } from '../types'
 import { DEFAULT_PIECE } from '../lib/defaults'
+import { usePlayer } from '../state/PlayerContext'
 
 const VOICES: Voice[] = ['S', 'A', 'T', 'B']
 const VOICE_VAR: Record<Voice, string> = { S:'--s', A:'--a', T:'--t', B:'--b' }
-
-interface Props { player: MsolfaPlayerState }
 
 function isVoiceAudible(player: MsolfaPlayerState, v: Voice) {
   if (player.solo.size > 0) return player.solo.has(v)
   return !player.muted[v]
 }
 
-export default function ScoreView({ player }: Props) {
+export default function ScoreView() {
+  const player = usePlayer()
   const { score, error, status, currentBeat, seekTo } = player
   const activeBi = Math.floor(currentBeat)
   const wrapRef  = useRef<HTMLDivElement>(null)

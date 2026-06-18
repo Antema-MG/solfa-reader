@@ -1,13 +1,12 @@
-import { Voice, MsolfaPlayerState } from '../types'
+import { Voice } from '../types'
+import { usePlayer } from '../state/PlayerContext'
 
 const VOICES: Voice[] = ['S', 'A', 'T', 'B']
 const VOICE_LABEL: Record<Voice, string> = { S: 'Soprano', A: 'Alto', T: 'Ténor', B: 'Basse' }
 const VOICE_VAR:  Record<Voice, string> = { S: '--s', A: '--a', T: '--t', B: '--b' }
 
-interface Props { player: MsolfaPlayerState }
-
-export default function VoiceBar({ player }: Props) {
-  const { muted, solo, toggleMute, toggleSolo, clearSelection } = player
+export default function VoiceBar() {
+  const { muted, solo, toggleMute, toggleSolo, clearSelection } = usePlayer()
 
   return (
     <div style={{

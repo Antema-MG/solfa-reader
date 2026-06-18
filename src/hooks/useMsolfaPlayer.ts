@@ -1,8 +1,11 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import type { MsolfaPlayerState, Voice, Timbre, Status, Score, NoteEvent } from '../types'
+import type { InstrumentId } from '../types/music'
+import { INSTRUMENT_BY_ID, DEFAULT_INSTRUMENT } from '../types/music'
 import { parseMsolfa }  from '../lib/parser'
 import { AudioEngine }  from '../lib/audioEngine'
-import { degreeToMidi, midiToFreq, VOICE_BASE_OCTAVE, computePianoMidis, NoteSpec } from '../lib/pitch'
+import { loadInstrument } from '../lib/soundfont'
+import { degreeToMidi, VOICE_BASE_OCTAVE, computePianoMidis, NoteSpec } from '../lib/pitch'
 import { DEFAULT_PIECE } from '../lib/defaults'
 
 const VOICES: Voice[] = ['S', 'A', 'T', 'B']
@@ -28,7 +31,9 @@ export function useMsolfaPlayer(): MsolfaPlayerState {
   const [status,      setStatus]     = useState<Status>('stopped')
   const [tempo,       setTempoVal]   = useState(80)
   const [tonic,       setTonicVal]   = useState('G')
-  const [timbre,      setTimbreVal]  = useState<Timbre>('organ')
+  const [timbre,      setTimbreVal]  = useState<Timbre>(INSTRUMENT_BY_ID[DEFAULT_INSTRUMENT].fallback)
+  const [instrumentId,      setInstrumentIdVal] = useState<InstrumentId>(DEFAULT_INSTRUMENT)
+  const [instrumentLoading, setInstrumentLoading] = useState(false)
   const [muted,       setMuted]      = useState<Record<Voice, boolean>>({ S:false, A:false, T:false, B:false })
   const [solo,        setSolo]       = useState<Set<Voice>>(new Set())
   const [currentBeat, setCurrentBeat] = useState(0)
@@ -48,6 +53,8 @@ export function useMsolfaPlayer(): MsolfaPlayerState {
   const loopStartRef     = useRef<number | null>(null)
   const loopEndRef       = useRef<number | null>(null)
   const rafRef           = useRef(0)
+  const instrumentIdRef  = useRef<InstrumentId>(DEFAULT_INSTRUMENT)
+  const instrumentLoadingRef = useRef(false)
 
   // ── Helpers ───────────────────────────────────────────────
   const isAudible = useCallback((v: string): boolean => {
@@ -100,6 +107,7 @@ export function useMsolfaPlayer(): MsolfaPlayerState {
     const upper = loopEndRef.current ?? file.totalBeats
 
     file.events.forEach(ev => {
+      if (!isAudible(ev.voice)) return
       const evEnd = ev.start + ev.durBeats
       if (evEnd <= posBeats || ev.start >= upper) return
       const effStart = Math.max(ev.start, posBeats)
@@ -109,9 +117,9 @@ export function useMsolfaPlayer(): MsolfaPlayerState {
       const allMidis = computePianoMidis(specsAtBeat(file.events, ev.start), tonicRef.current)
       const midi = allMidis[ev.voice]
         ?? degreeToMidi(ev.degree, ev.octave, ev.chromatic, tonicRef.current, VOICE_BASE_OCTAVE[ev.voice])
-      engine.scheduleNote(ev.voice, midiToFreq(midi), base + (effStart - posBeats) * spb, durSec)
+      engine.scheduleNote(ev.voice, midi, base + (effStart - posBeats) * spb, durSec)
     })
-  }, [secondsPerBeat])
+  }, [secondsPerBeat, isAudible])
 
   // ── Animation loop ─────────────────────────────────────────
   useEffect(() => {
@@ -185,6 +193,8 @@ export function useMsolfaPlayer(): MsolfaPlayerState {
     if (!file) return
     const engine = engineRef.current
     engine.ensure()
+    // Sampler-only playback: wait until the instrument has finished loading.
+    if (!engine.hasSampler) return
     if (statusRef.current === 'paused') {
       engine.resume()
       statusRef.current = 'playing'; setStatus('playing')
@@ -244,32 +254,67 @@ export function useMsolfaPlayer(): MsolfaPlayerState {
     if (statusRef.current === 'playing') scheduleFrom(getPosition())
   }, [scheduleFrom, getPosition])
 
+  // Load (or swap) the sampled instrument the react-piano way: stop sound, show
+  // a loading state, and only expose the new samples once fully decoded — no
+  // synth fallback, so nothing ever doubles or plays the wrong timbre.
+  const setInstrument = useCallback((id: InstrumentId) => {
+    const engine = engineRef.current
+    const meta   = INSTRUMENT_BY_ID[id]
+    instrumentIdRef.current = id; setInstrumentIdVal(id)
+    // Drives the keyboard chrome skin (organ/piano/melodic) only.
+    engine.timbre = meta.fallback; setTimbreVal(meta.fallback)
+    // Stop anything currently sounding and detach the old sampler for a clean swap.
+    engine.stopAll()
+    engine.setSampler(null)
+    statusRef.current = 'stopped'; setStatus('stopped')
+    setLitMidis({})
+    engine.ensure()
+    const ctx = engine.audioContext
+    if (!ctx) return
+    instrumentLoadingRef.current = true; setInstrumentLoading(true)
+    loadInstrument(ctx, id, engine.samplerDestination ?? undefined)
+      .then(player => {
+        // Ignore stale loads if the user switched again while fetching.
+        if (instrumentIdRef.current !== id) return
+        engine.setSampler(player)
+      })
+      .catch(() => { /* offline / fetch failed — stays silent until retried */ })
+      .finally(() => {
+        if (instrumentIdRef.current === id) {
+          instrumentLoadingRef.current = false; setInstrumentLoading(false)
+        }
+      })
+  }, [])
+
   const toggleMute = useCallback((v: Voice) => {
     const next = { ...mutedRef.current, [v]: !mutedRef.current[v] }
     mutedRef.current = next; setMuted({ ...next })
-    engineRef.current.applyVoiceGains(isAudible)
-    setLitMidis(computeLitMidis(Math.floor(currentBeatRef.current)))
-  }, [isAudible, computeLitMidis])
+    if (statusRef.current === 'playing') scheduleFrom(getPosition())
+    setLitMidis(computeLitMidis(Math.floor(getPosition())))
+  }, [scheduleFrom, getPosition, computeLitMidis])
 
   const toggleSolo = useCallback((v: Voice) => {
     const next = new Set(soloRef.current)
     next.has(v) ? next.delete(v) : next.add(v)
     soloRef.current = next; setSolo(new Set(next))
-    engineRef.current.applyVoiceGains(isAudible)
-    setLitMidis(computeLitMidis(Math.floor(currentBeatRef.current)))
-  }, [isAudible, computeLitMidis])
+    if (statusRef.current === 'playing') scheduleFrom(getPosition())
+    setLitMidis(computeLitMidis(Math.floor(getPosition())))
+  }, [scheduleFrom, getPosition, computeLitMidis])
 
   const clearSelection = useCallback(() => {
     loopStartRef.current = null; loopEndRef.current = null
   }, [])
 
+  // Preload the default instrument on mount so the first Play is ready to sound.
+  useEffect(() => { setInstrument(DEFAULT_INSTRUMENT) }, [setInstrument])
+
   return {
     score, error, status,
     isPlaying: status === 'playing',
-    tempo, tonic, timbre, muted, solo,
+    tempo, tonic, timbre, instrumentId, instrumentLoading, muted, solo,
     currentBeat, litMidis,
     openFile, play, pause, stop, seekTo,
-    setTempo, setTonic, setTimbre,
+    setTempo, setTonic, setTimbre, setInstrument,
     toggleMute, toggleSolo, clearSelection,
   }
 }

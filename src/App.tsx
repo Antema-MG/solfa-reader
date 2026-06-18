@@ -1,14 +1,13 @@
 import { useEffect } from 'react'
-import { useMsolfaPlayer } from './hooks/useMsolfaPlayer'
+import { PlayerProvider, usePlayer } from './state/PlayerContext'
 import TopBar      from './components/TopBar'
 import VoiceBar    from './components/VoiceBar'
 import ScoreView   from './components/ScoreView'
 import ProgressBar from './components/ProgressBar'
 import PianoView   from './components/PianoView'
 
-export default function App() {
-  const player = useMsolfaPlayer()
-  const { score, isPlaying, play, pause, openFile } = player
+function AppShell() {
+  const { score, isPlaying, play, pause, openFile } = usePlayer()
 
   // Drag & drop
   useEffect(() => {
@@ -40,11 +39,19 @@ export default function App() {
 
   return (
     <div style={{ display:'flex', flexDirection:'column', height:'100vh' }}>
-      <TopBar      player={player} />
-      <VoiceBar    player={player} />
-      <ScoreView   player={player} />
-      <ProgressBar player={player} />
-      <PianoView   player={player} />
+      <TopBar />
+      <VoiceBar />
+      <ScoreView />
+      <ProgressBar />
+      <PianoView />
     </div>
+  )
+}
+
+export default function App() {
+  return (
+    <PlayerProvider>
+      <AppShell />
+    </PlayerProvider>
   )
 }

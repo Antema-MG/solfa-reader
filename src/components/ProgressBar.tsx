@@ -1,9 +1,7 @@
-import type { MsolfaPlayerState } from '../types'
+import { usePlayer } from '../state/PlayerContext'
 
-interface Props { player: MsolfaPlayerState }
-
-export default function ProgressBar({ player }: Props) {
-  const { score, currentBeat, seekTo } = player
+export default function ProgressBar() {
+  const { score, currentBeat, seekTo } = usePlayer()
   const pct = score ? (currentBeat / score.totalBeats) * 100 : 0
 
   function handleClick(e: React.MouseEvent<HTMLDivElement>) {

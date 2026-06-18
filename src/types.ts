@@ -1,3 +1,5 @@
+import type { InstrumentId } from './types/music'
+
 export type Voice   = 'S' | 'A' | 'T' | 'B'
 export type Status  = 'stopped' | 'playing' | 'paused'
 export type Timbre  = 'organ' | 'piano' | 'strings' | 'brass' | 'flute' | 'bell' | 'guitar'
@@ -45,6 +47,8 @@ export interface MsolfaPlayerState {
   tempo:       number
   tonic:       string
   timbre:      Timbre
+  instrumentId:      InstrumentId
+  instrumentLoading: boolean
   muted:       Record<Voice, boolean>
   solo:        Set<Voice>
   currentBeat: number
@@ -58,6 +62,7 @@ export interface MsolfaPlayerState {
   setTempo:      (bpm: number)  => void
   setTonic:      (key: string)  => void
   setTimbre:     (t: Timbre)    => void
+  setInstrument: (id: InstrumentId) => void
   toggleMute:    (v: Voice)     => void
   toggleSolo:    (v: Voice)     => void
   clearSelection: () => void

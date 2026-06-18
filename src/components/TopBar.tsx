@@ -1,16 +1,18 @@
-import type { MsolfaPlayerState, Timbre } from '../types'
+import type { InstrumentId, KeyboardVariant } from '../types/music'
+import { INSTRUMENTS } from '../types/music'
 import { TONICS } from '../lib/pitch'
+import { usePlayer } from '../state/PlayerContext'
 
-const TIMBRES: [Timbre, string][] = [
-  ['organ','Orgue'], ['piano','Piano'], ['strings','Cordes'], ['brass','Cuivres'],
-  ['flute','Flûte'], ['bell','Cloche'], ['guitar','Guitare'],
-]
+const VARIANT_LABEL: Record<KeyboardVariant, string> = {
+  organ: 'Orgues', piano: 'Pianos', melodic: 'Mélodiques',
+}
+const VARIANT_ORDER: KeyboardVariant[] = ['piano', 'organ', 'melodic']
 
-interface Props { player: MsolfaPlayerState }
-
-export default function TopBar({ player }: Props) {
-  const { score, status, isPlaying, tempo, tonic, timbre,
-          play, pause, stop, setTempo, setTonic, setTimbre, openFile } = player
+export default function TopBar() {
+  const player = usePlayer()
+  const { score, status, isPlaying, tempo, tonic,
+          instrumentId, instrumentLoading, setInstrument,
+          play, pause, stop, setTempo, setTonic, openFile } = player
 
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -72,15 +74,18 @@ export default function TopBar({ player }: Props) {
         }}>■</button>
         <button
           onClick={isPlaying ? pause : play}
-          title={isPlaying ? 'Pause' : status === 'paused' ? 'Reprendre' : 'Lecture'}
+          disabled={instrumentLoading}
+          title={instrumentLoading ? 'Chargement de l’instrument…'
+                 : isPlaying ? 'Pause' : status === 'paused' ? 'Reprendre' : 'Lecture'}
           style={{
             width:38, height:34, borderRadius:6,
             border:'1px solid var(--border2)',
             background: isPlaying ? 'var(--green2)' : 'var(--green)',
-            color:'#fff', fontSize:14,
+            color:'#fff', fontSize:14, cursor: instrumentLoading ? 'wait' : 'pointer',
+            opacity: instrumentLoading ? 0.5 : 1,
             display:'flex', alignItems:'center', justifyContent:'center',
           }}
-        >{isPlaying ? '⏸' : '▶'}</button>
+        >{instrumentLoading ? '⋯' : isPlaying ? '⏸' : '▶'}</button>
       </div>
 
       {/* BPM */}
@@ -102,12 +107,28 @@ export default function TopBar({ player }: Props) {
         </select>
       </div>
 
-      {/* Timbre */}
+      {/* Instrument (sampled voices) */}
       <div style={ctrlStyle}>
-        <span>Timbre</span>
-        <select value={timbre} onChange={e => setTimbre(e.target.value as Timbre)} style={selStyle}>
-          {TIMBRES.map(([val, label]) => <option key={val} value={val}>{label}</option>)}
+        <span>Instrument</span>
+        <select
+          value={instrumentId}
+          onChange={e => setInstrument(e.target.value as InstrumentId)}
+          style={{ ...selStyle, maxWidth: 180 }}
+        >
+          {VARIANT_ORDER.map(variant => (
+            <optgroup key={variant} label={VARIANT_LABEL[variant]}>
+              {INSTRUMENTS.filter(i => i.variant === variant).map(i => (
+                <option key={i.id} value={i.id}>{i.label}</option>
+              ))}
+            </optgroup>
+          ))}
         </select>
+        <span style={{
+          minWidth: 90, fontSize: 11, color: 'var(--accent)',
+          opacity: instrumentLoading ? 1 : 0, transition: 'opacity .2s',
+        }}>
+          ⋯ chargement
+        </span>
       </div>
     </div>
   )

@@ -1,4 +1,14 @@
 import type { Timbre } from '../types'
+import type { Player } from './soundfont'
+import { midiToFreq } from './pitch'
+
+/** Per-note play options actually supported by soundfont-player (destination is
+ *  honoured at runtime but missing from its typings). */
+type SfPlay = (
+  note: number | string,
+  when?: number,
+  opts?: { gain?: number; duration?: number; destination?: AudioNode },
+) => unknown
 
 type TimbreCfg = {
   type: OscillatorType
@@ -25,14 +35,17 @@ export class AudioEngine {
   private ctx:       AudioContext | null = null
   private master:    GainNode    | null = null
   private vGain:     Record<string, GainNode> = {}
+  private previewGain: GainNode  | null = null
+  private samplerBus:  GainNode  | null = null
   private scheduled: OscillatorNode[] = []
+  private sampler:   Player      | null = null
   timbre: Timbre = 'organ'
 
   ensure() {
     if (this.ctx) return
     this.ctx   = new AudioContext()
     this.master = this.ctx.createGain()
-    this.master.gain.value = 0.22
+    this.master.gain.value = 0.5
     this.master.connect(this.ctx.destination)
     for (const v of ['S','A','T','B']) {
       const g = this.ctx.createGain()
@@ -40,9 +53,23 @@ export class AudioEngine {
       g.connect(this.master)
       this.vGain[v] = g
     }
+    this.previewGain = this.ctx.createGain()
+    this.previewGain.gain.value = 1
+    this.previewGain.connect(this.master)
+    // Sampled instruments share one bus → master (per-voice muting is handled
+    // at schedule time, since a single sample-player can't gate per voice).
+    this.samplerBus = this.ctx.createGain()
+    this.samplerBus.gain.value = 1
+    this.samplerBus.connect(this.master)
   }
 
   get currentTime() { return this.ctx?.currentTime ?? 0 }
+  get audioContext(): AudioContext | null { return this.ctx }
+  get samplerDestination(): AudioNode | null { return this.samplerBus }
+  get hasSampler() { return !!this.sampler }
+
+  /** Swap the active sampled instrument (null → fall back to the synth). */
+  setSampler(p: Player | null) { this.sampler = p }
 
   resume()  { void this.ctx?.resume() }
   suspend() { void this.ctx?.suspend() }
@@ -57,14 +84,35 @@ export class AudioEngine {
   stopAll() {
     this.scheduled.forEach(n => { try { n.stop() } catch (_) {} })
     this.scheduled = []
+    try { this.sampler?.stop() } catch (_) {}
   }
 
-  scheduleNote(voice: string, freq: number, startTime: number, durSec: number) {
-    if (!this.ctx) return
-    const cfg  = TIMBRES[this.timbre]
-    const env  = this.ctx.createGain()
+  /** Schedule a voice note (sampled if a sampler is loaded, else synth). */
+  scheduleNote(voice: string, midi: number, startTime: number, durSec: number) {
     const sink = this.vGain[voice]
     if (!sink) return
+    this.emit(sink, midi, startTime, durSec)
+  }
+
+  /** Play a single note immediately, routed past the voice gains (key preview). */
+  playPreview(midi: number, durSec = 0.7) {
+    this.ensure(); this.resume()
+    if (!this.previewGain) return
+    this.emit(this.previewGain, midi, this.currentTime + 0.02, durSec)
+  }
+
+  private emit(dest: AudioNode, midi: number, startTime: number, durSec: number) {
+    if (!this.ctx) return
+    if (this.sampler) {
+      // The player is already wired to the sampler bus at load time; sample-player
+      // ignores a per-note destination, so we don't pass `dest` here.
+      (this.sampler.play as unknown as SfPlay)(midi, startTime, { gain: 1, duration: durSec })
+      return
+    }
+    const freq = midiToFreq(midi)
+    const cfg  = TIMBRES[this.timbre]
+    const env  = this.ctx.createGain()
+    const sink = dest
 
     if (cfg.filter) {
       const filt = this.ctx.createBiquadFilter()

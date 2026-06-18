@@ -38,3 +38,65 @@ body {
   overflow: hidden;
 }
 button { font-family: inherit; cursor: pointer; }
+
+/* ── Keyboard chrome ───────────────────────────────────────── */
+.kb-chrome {
+  --kb-frame:  linear-gradient(180deg, #2a2a30 0%, #18181c 100%);
+  --kb-rail:   #0c0c0e;
+  --kb-engrave:#7c7770;
+  --kb-accent: var(--accent);
+  padding: 14px 16px 18px;
+  background: var(--kb-frame);
+  border-top: 1px solid var(--border);
+  border-radius: 0;
+}
+.kb-chrome[data-variant="organ"] {
+  /* Hammond-style wood with fibre veining */
+  --kb-frame:
+    repeating-linear-gradient(90deg, rgba(0,0,0,0.05) 0 2px, rgba(255,255,255,0.015) 2px 5px),
+    linear-gradient(180deg, #6b4528 0%, #4e3018 55%, #3a2412 100%);
+  --kb-rail:   #2a1a0d;
+  --kb-engrave:#d8b486;
+  --kb-accent: #e0b070;
+}
+.kb-chrome[data-variant="piano"] {
+  --kb-frame: linear-gradient(180deg, #1b1b1f 0%, #050506 100%);
+  --kb-rail:  #000;
+  --kb-engrave:#8a8a92;
+}
+.kb-chrome[data-variant="melodic"] {
+  --kb-frame: linear-gradient(180deg, #24242b 0%, #131318 100%);
+  --kb-rail:  #0a0a0c;
+  --kb-engrave:#9a9890;
+}
+
+.kb-header {
+  display: flex; align-items: center; gap: 0;
+  height: 22px; margin-bottom: 12px;
+  color: var(--kb-engrave);
+  font-size: 10px; letter-spacing: .22em; font-weight: 700;
+  text-transform: uppercase;
+  text-shadow: 0 1px 0 rgba(0,0,0,0.55), 0 -1px 0 rgba(255,255,255,0.06);
+}
+.kb-header .seg { padding: 0 14px; }
+.kb-header .filet { width: 1px; height: 14px; background: currentColor; opacity: .35; }
+
+.kb-keybed {
+  position: relative; display: flex;
+  padding: 7px 8px 9px;
+  background: var(--kb-rail);
+  border-radius: 5px;
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.6);
+}
+
+/* keys */
+.kb-key {
+  position: relative; flex: none;
+  transition: transform .08s cubic-bezier(.2,.7,.3,1),
+              filter .12s ease, box-shadow .12s ease;
+}
+.kb-key.pressed { transform: translateY(3px); filter: brightness(.93); }
+@media (prefers-reduced-motion: reduce) {
+  .kb-key { transition: none; }
+  .kb-key.pressed { transform: none; }
+}
