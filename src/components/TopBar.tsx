@@ -1,7 +1,8 @@
 import type { InstrumentId, KeyboardVariant } from '../types/music'
 import { INSTRUMENTS } from '../types/music'
-import { TONICS } from '../lib/pitch'
+import { TONICS } from '../domain/pitch'
 import { usePlayer } from '../state/PlayerContext'
+import { useEditor } from '../state/EditorContext'
 
 const VARIANT_LABEL: Record<KeyboardVariant, string> = {
   organ: 'Orgues', piano: 'Pianos', melodic: 'Mélodiques',
@@ -10,6 +11,7 @@ const VARIANT_ORDER: KeyboardVariant[] = ['piano', 'organ', 'melodic']
 
 export default function TopBar() {
   const player = usePlayer()
+  const { isEditing, enter, exit } = useEditor()
   const { score, status, isPlaying, tempo, tonic,
           instrumentId, instrumentLoading, setInstrument,
           play, pause, stop, setTempo, setTonic, openFile } = player
@@ -51,6 +53,20 @@ export default function TopBar() {
       >Ouvrir .msolfa</button>
       <input id="msolfa-file-input" type="file" accept=".msolfa,.txt"
         style={{ display:'none' }} onChange={handleFile} />
+
+      {/* Edit toggle */}
+      <button
+        onClick={isEditing ? exit : enter}
+        disabled={!score}
+        title={isEditing ? 'Quitter l’édition' : 'Éditer la partition'}
+        style={{
+          background: isEditing ? 'var(--green)' : 'var(--bg4)',
+          border:'1px solid var(--border2)',
+          color: isEditing ? '#fff' : 'var(--text)',
+          padding:'7px 12px', borderRadius:6, fontSize:13, fontWeight:600,
+          opacity: score ? 1 : 0.4, cursor: score ? 'pointer' : 'not-allowed',
+        }}
+      >{isEditing ? '✓ Édition' : '✎ Éditer'}</button>
 
       {/* Meta */}
       <div style={{ display:'flex', flexDirection:'column', lineHeight:1.3, minWidth:160 }}>

@@ -1,0 +1,70 @@
+Maintimolaly
+Do dia D 4/4 Milamindamina
+s : -.f | m.,m : f.l s : -.f | m. m.,m f : -.m | r.,m : f.r
+m : -.r | d.,d : r.f m : -.r | d. d.,d r : -.d | t.,d : r.t,
+d : -.d' | s.,s : d'.d' d' : -.s | s. s.,s s : -.s | s.,s : s.s
+d : -.d | d.,d : d.d d : -.t, | d. d.,d s : - | - : -
+Sa- mba- samba Zana- ha- ry Tamin' ny nampi- dina-
+m : - | - : - m : - | f.m : f.l s : -.f | m. m.m
+d : - | - : - d : - | r.d : r.f m : -.r | d. d.d
+s : - | - : - s : - | d.s : d'.d' d : -.s | s. s.s
+nao Ny Zana- kao ma- la- la- nao Mbahi-
+s : -.f | f.m : r.d d : - | d.d : d.d d : -.t, | d. d.d
+na- mpi- dina- nao Ny Zana- kao ma-la- la- nao Mbahi-
+D.C. .$.
+f : -.m | r.,m : f.r m : - | - : - : | :
+r : -.d | t,.,d : r.t, d : - | - : - : | :
+s : -.s | s.,s : s.s s : - | - : - : | :
+s, : -.s, | s,.,l, : t,.s, d : - | - : - d.,r : m.r | s.d,d : d
+so- lo ny helo- kay. Tamin' nynampidina- nao
+d' : -.t | t.l : l : | : l : -.s | s.f : l.f
+l : -.s | s.f : f : | : f : -.m | m.r : f.r
+d' : -.d' | d'.d' : d' : | : d' : -.d' | d'.d' : d'.d'
+: | : d : m.s | d'.s : m.d : | :
+Ny Zana- kao Ma- la- la- nao Ma- lala- nao
+D.S. Farany
+m : f.l | s : l.f m : r.,r | d : -
+d : r.f | m : f.r d : t,.,t, | d : -
+s : d'.d' | d' : s.s s : f.,f | m : -
+d : d.d | d : s,.t, d : s,.,s, | d : -
+Mba hi- so- lo ny helo- kay.
+79. SAMBASAMBA ZANAHARY
+(1)
+P.M.
+(2)
+Do dia C 3/4 8.8.8.8. Maintimolaly
+m : - : f s : d' : d' m : - : f s : d' : d' l : - : l
+d : - : r m : - : m d : - : r m : - : s f : - : f
+s : - : s d' : - : s s : - : s d' : - : d' d' : - : d'
+d : - : d d : - : d d : - : t, d : - : m f : - : f
+Sa- mba- sa- mba, Za- na- ha- ry, Ta- min'
+r' : t : d' t : d' : t l : s : f m : - : f s : d' : d'
+f : - : - s : l : s f : m : r d : - : r m : - : m
+l : - : - t : d' : t l : s : f s : - : s d' : - : s
+r' : - : - s : l : s f : m : r d : - : d d : - : d
+ny na- mpi- di- na- nao Ny Za- na- kao
+m : - : f s : d' : d' l : l : l s : - : f m : - : r
+d : - : r m : - : m f : f : f m : - : r d : - : t,
+s : - : s d' : - : s d' : d' : d' d' : - : s s : - : f
+d : - : d d : - : d f : f : f s : - : s s, : - : s,
+ma- la- la- nao Mba hi- so- lo ny he- lo-
+.$.
+m : - m' r' : - : t t : - : m' r' : - : t t : - : -
+d : - d' t : - : s s : - : d' t : - : s s : - : -
+Ta- min' ny nam- pi- di- na- nao
+m : - : : r' r' : - : s s : - : r' r' : -.r' : r'
+d : - : : s s : - : s s : - : s s : -.s : s
+kay. Ta- min' ny nam- pi- di- na- nao
+t : d' : t l : - : - l : t : l s : - : - s : l : s
+s : l : s f : - : - f : s : f m : - : - m : f : m
+ny za- na- kao ma- la- la- nao Mba hi- so-
+: : d' : d' : d' d' : - : - s : s : s s : - : -
+: : f : l : d' f : - : - d : m : s d : - : -
+ny za- na- kao ma- la- la- nao
+D.S.
+f : - : - f : s : f m : - : - - : - :
+r : - : - r : m : r d : - : - - : - :
+lo ny he- lo- kay.
+s : s : s s.s : d' : t s : - : - - : - :
+s, : t, : r s.s : s : s d : - : - - : - :
+Mba hi- so- lony he- lo- kay.

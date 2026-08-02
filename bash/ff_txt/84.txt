@@ -1,0 +1,77 @@
+RAKOTOARISOA Hiantra Solofomandimby Sata Rabe, Mpitandrina
+Dô dia D 4/4
+d' : - | t : -.l s : d' | - : f m : - | r : -.r d : m | : fi
+m : - | f : -.f m : m | - : d d : - | t, : -.t, d : d | : r
+s : - | l : -.t d' : s.l | s : l s : - | f : -.f m : s | :
+d : - | r : -.r m : d.r | m : f s : - | s, : -.s, d : d | :
+Mi de rà, Mide rà a n'i Je ho vah ry
+s : -.l | t :d'.d' t : t | : d' t : -.r' | l : t.l l : s | : s.s
+r : -.r | r :m.m r : r | : s s : -.s | fi : fi.fi fi : s | :
+: | : -.fi s : s | : m' r' : -.t | d' : d'.d' d' : t | :
+: | : : | : d r : -.r | r : r.r r : s | :
+fi re ne na re he tra, ry fi re ne na re he tra Mide
+s : - | - : - : | : s.s s : - | - : - : | : s.s
+: r.m | f : f m : m | : : r.m | f : f m : m | :
+: t.d' | r' : r' d' : d' | : : t.d' | r' : r' d' : d' | :
+: s.s | s : s d : d | : : s.s | s : s d : d | :
+rà, Mide rà A zy Mide rà, Mide rà A zy Ry
+fi : - | - : fi s : - | : s.s fi : - | - : fi s : s | :
+: r.r | m : m r : - | : : r.r |m.m: m.m r : r | :
+: l.t | d' : d' t : - | : : l.t | d.d : d.d t : t | :
+: r.m | fi : r s : - | : : r.m | fi.fi : r.r s : s.f | m : r
+o Ry o lo na Ry olo na Ry olo na re he tra|Mi de rà
+FARANY
+d' : - | t : -.l s : d' | - : f m : - | r : -.r d : d | - :
+m : - | f : -.f m : m | - : d d : - | t, : -.t, s, : s, | - :
+s : - | l : -.t d' : s.l | s : l s : - | f : -.f m : m | - :
+d : - | r : -.r m : d.r | m : f s : - | s, : -.s, d : d | - :
+Mi de rà, Mide rà a n'i Je ho vah ry
+$1
+m : - | r : -.d m : m | d : s : - | f : -.m s : s | m : s.s
+: | : : | : m : - | r : -.d m : m | d :m.m
+s : - | f : -.m s : s | m : : | : : | :d'.d'
+: | : : | : : | : : | : s.s
+Mi de rà A zy, Mi de rà A zy, Mide
+FF84. MIDERA, MIDERA AN'I JEHOVAH (Salamo 117)
+SOLFA ++
+SOLFA ++
+SOLFA ++
+d' : - | - : s.s l : l | l : l.l r' : - | - : l.l t : t | t : s.s
+m : - | - :m.m f : f | f : f.f fi : - | - : fi.fi s : s | s :m.m
+s : - | - :d'.d' d' : d' | d' :d'.d' l : - | - : l.l r' : r' | r' :d'.d'
+d : d.r | m : d.d f : f | f : f.m r : r.m | fi : r.r s : s | s : s.s
+rà, Mide rà, Mide rà A zy Mide rà, Mide rà, Mide rà A zy, Mide
+DS1
+d' : d' | d' : s l.l : l.l | l : l.d' d' : -.d' | t : -.t t : d' | - :
+m : m | m : m f.f : f.f | f : f.f m : -.m | f : -.f f : m | - :
+s : s | s : d' d'.d' :d'.d' | d' : d'.r' s : -.d' | r' : -.r' r' : d' | - :
+d : d | d : m f.f : f.f | f.r : m.f s : -.s | s : -.s s : d | - :
+rà A zy ry fire nena re hetra ry o lo na re he tra.
+$2 3/4
+d' : - : t.l s : - : l.l s : - : f m : m : s.s : m'.r': d'.t
+m : - : s.f m : - : f.f m : - : r d : d : : : s.s
+Fa lehi be ny fa min dram- po ny fa
+s : s : d' : d' : d' :d'.d' : t s : s : : :
+d : d : d : d : d : d.d : s d : d : : :
+Fa le hi be ny famindram- po ny Fa lehi be ny
+l : -.si : l.t l.t : d' : l r' : r' : - d' : -.d' : d'.d' d' : d' :
+fa mindram-pony amin tsi ka,
+fi.fi : fi.fi : fi.fi fi.fi : fi : fi s : s : - m : -.m : f.f m : m :
+lehi be ny famindram-pony amin tsi ka,
+l : l : l.m' : r' : d' t : t : - s : -.s : l.l s : s :
+r : r : r.r : r : r s : s : - d : -.d : d.d d : d :
+fa min dram-po ny a min tsi ka, a ry mandra ki zay,
+r' : -.r' : r'.r' r' : r' : d'.,d':d'.d' : d'.d' l.,l : l.t : d'.r' d' : - : t
+fi : -.fi : l.l s : s : m.,m:m.m: m.m f.,f : f.f : f.f m : - : f
+l : -.l :d'.d' t : t : s.,s : s.s : s.s d'.,d':d'.d' : d'.r' s : - : s
+r : -.m : fi.r s : s : d.,d : d.d : d.d f.,f : f.r : m.f s : - : s,
+A ry mandra ki zay, Ary mandrakizay ny fa hama rina n'i Je
+DS2 DC FAMARANANA
+d' : d' : - : : d' : - | d' : -.d' d' : - | - :
+m : m : - : : m : - | f : -.f f : m | - :
+s : s : - : : s : ta | l : -.si s : - | - :
+d : d : - s.,l : s.f : m.r d : - | d : -.d d : - | - :
+ho vah. Mi de rà HA LE LO IA
+SOLFA ++
+SOLFA ++
+SOLFA ++

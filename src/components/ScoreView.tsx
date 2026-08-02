@@ -1,7 +1,9 @@
 import { useRef, useEffect } from 'react'
 import type { Voice, MsolfaPlayerState } from '../types'
-import { DEFAULT_PIECE } from '../lib/defaults'
+import { DEFAULT_PIECE } from '../domain/defaults'
 import { usePlayer } from '../state/PlayerContext'
+import { useEditor } from '../state/EditorContext'
+import EditorGrid from './Editor/EditorGrid'
 
 const VOICES: Voice[] = ['S', 'A', 'T', 'B']
 const VOICE_VAR: Record<Voice, string> = { S:'--s', A:'--a', T:'--t', B:'--b' }
@@ -13,6 +15,7 @@ function isVoiceAudible(player: MsolfaPlayerState, v: Voice) {
 
 export default function ScoreView() {
   const player = usePlayer()
+  const { isEditing } = useEditor()
   const { score, error, status, currentBeat, seekTo } = player
   const activeBi = Math.floor(currentBeat)
   const wrapRef  = useRef<HTMLDivElement>(null)
@@ -28,6 +31,9 @@ export default function ScoreView() {
     if (r.top < wr.top + 40 || r.bottom > wr.bottom - 40)
       el.scrollIntoView({ block: 'center', behavior: 'smooth' })
   }, [activeBi, status])
+
+  // Edit mode swaps the read-only score for the editable beat grid.
+  if (isEditing) return <EditorGrid />
 
   return (
     <div ref={wrapRef} style={{

@@ -177,6 +177,24 @@ Doigt 5 → Soprano uniquement
 → Éviter 5-2-1 si l'écart est inférieur à une tierce
 ```
 
+### 6.5 — Doublure de voix → complétion de l'accord
+> Quand une voix interne de la MD double la hauteur d'une autre voix MD, la main
+> droite ne sonnerait que 2 hauteurs distinctes. On **complète l'accord** en
+> réaffectant le doigt redondant à la classe de hauteur de la **Basse**, absente
+> de la MD — la main droite joue alors les 3 hauteurs distinctes de l'accord.
+
+```
+Entrée :  S=d   A=d   T=m   B=s        (A double S → MD = d, m seulement)
+Sortie :  S=d   A=s   T=m   B=s        (MD = d / m / s = triade complète)
+
+Placement (envergure minimale) : chaque voix interne à sa plus haute occurrence
+strictement sous le Soprano. L'identité de voix est conservée — la voix
+réaffectée (ici Alto = Sol) garde son étiquette ; l'ordre des hauteurs reflète
+les doigts, sans réétiquetage.
+
+  Do(C4)=S doigt 5   Sol(G3)=A doigt 3   Mi(E3)=T doigt 1
+```
+
 ---
 
 ## 7. MAIN GAUCHE — BASSE

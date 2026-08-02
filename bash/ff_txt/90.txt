@@ -1,0 +1,43 @@
+Dô dia E b 4/4 RANARIVELO Heriliva
+m : -.m | s : -.s l : d' | l : s - : .f | m.r : d -.d : r | m : d
+d : -.d | r : -.r m : d | l, : d - : .d | t,.l, : s, -.s, : l, | d : s,
+s : -.s | t : -.t d' : l | d' : s - : .l | s.f : m -.m : f | s : m
+d : -.d | t, : -.t, l, : d | f : m - : .r, |m,.f,: s, -.s, : s, | s, : d
+Sam ba tra i zay re he tra ma taho tra a n'i Je ho
+d : -. |mmm: m -. : mmm| l : .f r.d : d | m : f m : r | -.s : fi.,f
+s, : -. | ddr : d -. : ddd | r : .r l,.s, : s, | d : r d : t, | -.t, : d.,r
+m : -. | sssi : l -. : llta | l : .f f.m : m | s : l d' : s | -.s : l.t
+d : -. | ddt, : l, : l,l,s, | f, : .f, l,.s, : s, | s, : s, s, : s, | -.s, : d.r
+vah dia i zay, dia i zay man deha a mi n'ny la la ny, fa ho hani
+m : .f | s.,m : f.,m r : m.,m | f : - l.,d' : s | -.m : d.,d f : m | r : -.t,
+d : .r | m.,d : r.,d l, : di.,di | r : - ri.,ri: m | -.d : l,.,l, r : d | t, : -.s,
+s : .t | d'.,s : l.,ta l : l.,l | l : - d'.,d' : d' | -.l : m.,m f : s | f : -.f
+m : .r | d.,ta :l,.,s, f, : m,.,m,| r, : - fi,.,fi,: s, | -.m,: l,.,l, r : s, | s, : -.s,
+nao to koa ny asa n'ny tana nao Samba tra sa dy ha mbi ni na hia
+DC $
+d : - | : : | : : | : : | :
+s, : - | : : | : : | : : | :
+m : - | : s : m | d : s - : s.,s | d' : s m : r | - : d.r
+d : - | : : | : : | : : | :
+nao. Ny va di nao dia ta ha ka ny voa
+: | : : | : : | : : s | l : t
+: | : : | : t,.d : r | m.d : f.m r : t, | d : r
+m : - | m : fi -.m : r.d | r : - r.m : f | s.f : l.s f : s | fi : f
+: | : : | : : | : : s, | l, : t,
+lo bo ka maha voka tra ao a na tin'ny trano nao, ny za na
+d' : - | s.,s : s - : s.,s | s : -.m r.d : l | f : - d.r : m | - : m.,m
+d : - | d.,d : t, - : t,.,t, | d : -.d l,.d : d | l, : - d.r : d | - : d.,d
+m : - | m.,m: s - : s.,s | d' : -.s f.m : f | l : - l.si : s | - : s.,s
+d : - | d.,d : r - : r.,r | m : -.d d.d : f, | f, : - m,.f,: s, | - : s,.,s,
+kao dia ta haka ny za nak'o li va mano di dina
+DS
+f : -.m | r.,t, : d - : - | :
+r : -.d | t,.,s, : s, - : - | :
+l : -.s | f.,f : m - : - | :
+s, : -.s, |s,.,s, : d - : - | :
+ny la taba trao
+FF90. SAMBATRA IZAY MATAHOTRA AN'I JEHOVAH
+(Salamo 128, 1-3)
+SOLFA ++
+SOLFA ++
+SOLFA ++

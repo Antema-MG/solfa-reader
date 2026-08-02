@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react'
 import type { Voice } from '../../types'
 import type { KeyboardVariant } from '../../types/music'
-import { midiToFrenchName } from '../../lib/pitch'
+import { midiToFrenchName } from '../../domain/pitch'
 
 // Range C1–C6 (same as the previous keybed; superset of the C2–C6 minimum).
 const PIANO_LOW   = 24  // C1

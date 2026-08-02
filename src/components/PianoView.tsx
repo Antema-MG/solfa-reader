@@ -1,5 +1,5 @@
 import type { Voice, Timbre } from '../types'
-import { midiToFrenchName } from '../lib/pitch'
+import { midiToFrenchName } from '../domain/pitch'
 import { usePlayer } from '../state/PlayerContext'
 import { variantFromTimbre } from '../types/music'
 import KeyboardChrome from './Keyboard/KeyboardChrome'

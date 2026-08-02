@@ -1,0 +1,72 @@
+Dô dia A 3/4 RABARY (Ambohipotsy)
+s,.s, : s, : m.,m : m : -.,m r.,r : r : -.d l, : - : t, : t, :
+m.,m: m : s,.s, : s, : -.,s, f,.,f, : f, : -.f, f, : - : s, : s, :
+d.,d : d : d.,d : d : -.,d l,.,l, : l, : -.d d : - : r : r :
+d,.,d,: d, : d.,d : d : -.,d f,.,f, : f, : -.f, f, : - : s, : s, :
+Tafa toe tra ny fo ko An dria ma ni tra ô! E ny
+l,.,l, : l, : s,.s, : s, : - s, : - : s,.s, : s, : m.,m: m : -.,m
+f,.,f, : f, : r,.,r, : r : - f, : - : m.,m: m : s,.s, : s, : -.,s,
+d.,d : d : r,.,r, : r : - t, : - : d.,d : d : d.,d : d : -.,d
+l,.,l, : l, : t,.,t, : t, : - s, : - : d,.,d,: d, : d.,d : d : -.,d
+tafa toe tra ny fo ko. Tafa toe tra ny fo ko An
+r.,r : r : -.d l, : - : .t, t, : - : l,.l, s,.,s, : l, : t, d : - : -
+f,.,f, : f, : -.f, f, : - : .f, f, : - :m,.m, r,.,r, : m, : f, m, : - : -
+l,.,l, : l, : -.d d : - : .r r : - : d.d t,.,t, : d : r d : - : -
+f,.,f, : f, : -.f, f, : - : .s, s, : - : s,.s, s,.,s, : s, : s, d : - : -
+dria ma ni tra ô! Hi hi ra sy hanka la za A nao.
+- : : m,.,m,: s, : -.,s, f,.,f, : l, : - l,.,s, : t, : l, t,.,l, : s, : -
+- : : d,.,d, : m, : -.,m, : f, : - f,.,m,: s, : f, s,.,f, : m, : -
+- : : s,.,s, : d : -.,d d.,d : d : - d.,d : d : d d.,d : d : -
+- : : d,.,d, : d : -.,d d,.,d,: d : - d,.,d,: d : d d,.,d,: d : -
+Mifo ha za, mifo ha za ry vo ni nahi tro
+: s, : -.s, l, : - : l, : l, : -.d t, : -.l, : s, : m : -.m
+: m, : -.m, f, : - : f, : f, : -.f, s, : -.f, : m, : s, : -.s,
+: d : -.d d : - : d d : - : -.d d : - : d : :
+d, : - : -.d f, : - : f, f, : - : -.f, d : - : d : :
+Mi Mi fo ha za, mi mi fo ha za ry va
+f : -.m : r : t, : -.d r : -.d : m .,s, : s, : -.s, l, : - : l,
+l, : -.s, : f, : r, : -.m, f, : -.m, : s, .,m, : m, : -.m, f, : - : f,
+: : : : : : .,d : d : -.d d : - : d
+: : : : : : .,d, : d, : -.d, f, : - : f,
+li ha sy lo kan ga. Mi foha ma rai na
+FF80. TAFATOETRA NY FOKO (Salamo 57, 7-9)
+SOLFA ++
+SOLFA ++
+SOLFA ++
+DC $
+t, : - : - d : d : : : : : : :
+s, : - : - f, : m, : : : : : : :
+r : - : - s, : d : : : : : : :
+s, : - : - d, : d : d : d : m, s,.,s, : s, : d,.,m, s,.l, : s,.f, : m,.r,
+koa a ho. E ny hi dera A nao eny amin' ny va hoaka
+s, : -.s, : s, : : m : -.r : r : : r : -.d : d
+m, : -.r, : m, : : s, : -.s, : f, : : f, : -.s, : l,
+Tom po ô! Tom po ô Tom po ô
+: : : : : : : : : :
+d,.d, : : d,.d, : m, : s,.s, d : -.d : d d.d : t,t,t, : l,.s, f, : -.s, : l,
+aho Tompo ô hanka la za A nao eny amin'ny fire ne na,
+: l, : s, l, : -.s, : s, : : t, : -.d : r s,.s, : s, : s,
+: r, : m, f, : -.m, : m, : : r, : -.m, : f, r,.r, : r, : m,
+han ka la za A nao : : : : : :
+: l, : t, d : - : d d.,d : t, : l, s, : -.s, : s, s,.s, : s, : s,
+fi re ne nao, fire ne na, e ny a min'ny fi re
+l, : -.l, : s, : : m : -.r : r : : r : -.d : d
+f, : -.f, : m, : : s, : -.f, : f, : : f, : -.s, : l,
+ne na Tom po ô Tom po ô
+: : : : : : : : : :
+d, : - : d, d,.,d, : m, : s,.s, d : -.d : d d.d : t,t,t, : l,.s, f, : -.s, : l,
+ne na Tompo ô! hanka la za A nao eny amin'ny fire ne na,
+: l, : s, l, : -.s, : s, : : t, : -.d : r s,.s, : f, : s,
+: r, : m, f, : -.m, : m, : : r, : -.m, : f, r,.r, : r, : m,
+han ka la za A nao : : r : -.d : t, d.d : t, : d
+: l, : t, d : - : d d.,d : t, : l, s, : -.s, : s, s,.s, : s, : s,
+fi re ne nao, fire ne na; E ny a min'ny fi re
+DS
+r : : d : - : - - : :
+f, : : m, : - : - - : :
+t, : : d : - : - - : :
+d, : : d : - : - - : :
+ne na.
+SOLFA ++
+SOLFA ++
+SOLFA ++

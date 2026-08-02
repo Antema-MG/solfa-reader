@@ -33,6 +33,23 @@ export interface Score {
   beatsPerMeasure: number
 }
 
+// ── Editor model ────────────────────────────────────────────
+// A beat-grid abstraction: one EditCell per beat. Maps 1:1 onto the parser's
+// per-beat Element list, but is shaped for direct editing + serialization.
+export interface EditNote { kind: 'note'; degree: string; chromatic: number; octave: string }
+export interface EditTie  { kind: 'tie' }
+export interface EditRest { kind: 'rest' }
+// Two-eighths beat: first slot may be note/tie/rest, second is always a note
+// (mirrors the .msolfa grammar: `a.b`, `-.b`, `.b`).
+export type EditSlot = EditNote | EditTie | EditRest
+export interface EditPair { kind: 'pair'; a: EditSlot; b: EditNote }
+export type EditCell = EditNote | EditTie | EditRest | EditPair
+
+export interface EditMeasure { beats: Record<Voice, EditCell[]> }
+export interface EditBlock   { comment: string | null; measures: EditMeasure[] }
+export interface EditModel   { meta: Metadata; numerator: number; blocks: EditBlock[] }
+export interface EditSelection { block: number; voice: Voice; measure: number; beat: number; slot: 'a' | 'b' | null }
+
 export interface ParseError { line: number; message: string; voice?: string }
 export type ParseResult =
   | { success: true;  file: Score }

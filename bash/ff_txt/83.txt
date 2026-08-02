@@ -1,0 +1,79 @@
+Dô dia F 4/4 RAKOTOARIVONY Noël
+: .s, d.m : -.r | .s, : d.m r.,s, : .s, | d : m r : -.s, | d : : .s | s.d' : -.l
+: .s, d.m : -.r | .s, : d.m r.,s, : .s, | d : m r : -.s, | d : : .m | m.m: -.f
+: .s, d.m : -.r | .s, : d.m r.,s, : .s, | d : m r : -.s, | d : : .d | d.s : -.l
+: .s, d.m : -.r | .s, : d.m r.,s, : .s, | d : m r : -.s, | d : : .d | d.m : -.f
+Mi de rà an' i Je hovah Miantsoa ny A na ra ny Mi de rà
+.f : s | d' : l.,f .f : s | d' : l -.f : s | : .m : m.s | -.f : .r
+.r : m | m : f.,f .r : m | m : f -.r : m | : .d : d.ta, | -.l, : .t,
+.t : d' | s : l.,l .t : d' | s : d' -.t : d' | : .s : s.d' | -.l : .f
+.s : d | m : f.,f .s, : d | m : f -.s : d | : .d : d.ta, | -.l, : .si,
+an' i Je hovah Mian tsoa ny A na ra ny Mi de rà an'
+DC $
+m : s | f.,f : .r m : m | r : -.s, d : | : .s, l, : - | d.f : .l,
+d : ta, | l,.,l, : .si, s, : s, | t, : -.t, s, : | : .m, f, : - | l,.d : .f,
+s : d' | l.,f : .f s : s | f : -.r m : | : .d d : - | f.l : .f
+s, : ta, | l,.,l, : .si, s, : s, | s, : -.s, d : | : .d f : - | f.f : .f
+i Je hovah Mian tsoa ny A na ra ny A tao vy fan ta
+s, : - | : .m r. : | di.r : s, d : - | m : .s, l, : - | d.f : .l,
+m, : - | : .d t,. : | t,.t, : s, s, : - | d : .m, f, : - | l,.d : .f,
+m : - | : .s s. : | s.s : f m : - | s : .d d : - | f.l : .f
+d : - | : .d s,. : | s,.s, : s, m : - | d : .d f, : - | f,.f, : .f,
+tra a mi n'ny Fi re ne na A tao vy fan ta
+s, : - | - : .d' t : s | r : l s : - | - : - l : - | f.s : l.f
+m, : - | - : .l s : s | r : fi s : - | - : - f : - | r.r : r.r
+m : - | - : .m r : r | fi : l t : - | - : - d' : - | t.t : t.t
+d : - | - : .l, r : r | r : r s, : - | - : - f : - | s.s : s.s
+tra ny a sa ny Mi hi rà ho
+s : - | d : - f : - | r.m : f.r m : - | s : .m r : - | l : .l
+m : - | d : - r : - | t,.t, : t,.t, d : - | m : .d l, : - | f : .f
+d' : - | m : - s : - | s.s : s.s s : - | d' : .s f : - | r : .r
+d : - | d : - s, : - | s,.s, : t,.t, d : - | d : .m, f, : - | r, : .r,
+A zy Man kala zà A zy Sain tsai no ny
+s.m : .d | l, : - t, : t, | d : - d : - | - : .s, r : - | m.f : -.s
+m.d : .s, | fi, : - s, : s, | s, : - s, : - | - : .s, t, : - | d.r : -.m
+d.s : .m | r : - r : f | m : - m : - | - : .s f : - | s.l : -.t
+s,.s, : .s, | r, : - s, : s, | s, : - d : - | - : .s, s, : - | s,.s, : -.s,
+faha ga ga na a tao ny A tao vy ho re ha
+FF83. MIDERA AN'I JEHOVAH (Salamo 105, 1-3)
+SOLFA ++
+SOLFA ++
+SOLFA ++
+l : .sfi | s : .s, r.r : .m | f : s m : | : .s, r : - | m.f : -.s
+f : .mri | m : .s, t,.t, : .d | r : t, d : | : .s, t, : - | d.r : -.m
+d' : .d's | s : .s f.f : .s | s : s s : | : .s f : - | s.l : -.t
+d : .dd | d : .s, s,.s, : .s, | s, : s, d : | : .s, s, : - | s,.s, : -.s,
+re hana reo ny A nara ny Ma si na Ao ka hifa ly
+DS rit...
+l : .sfi | s : .s fi : fi | s : l l : - | s : - m : - | f : s
+f : .mri | m : .m r : r | r : fi fi : - | s : - d : - | r : m
+d' : .d's | s : .s l : l | l : d' d' : - | t : - s : - | s : d'
+d : .dd | d : .s, r : r | r : r r : - | s, : - d : - | d : d
+ny fon'i zay mi ta dy a n'i Je ho vah Ha le
+Dô dia Ab
+s : - | r : - r : - | m : f f : - | d : dl, : - | t, : d
+r : - | t, : - ta, : - | d : ta, l, : - | l, : si,f, : - | f, : f,
+t : - | s : - f : - | f : r' d' : - | l : d'l : - | l : l
+t, : - | t, : - ta, : - | ta, : ta, l, : - | l, : si,f, : - | f, : f,
+lo ia Ha le lo ia Ha le
+Dô dia F
+d : - | s, : r m : | : ms : - | s : d' t : - | s :
+m, : - | m, : s, si, : | : l,d : - | r : m r : - | t, :
+s : - | d : d t, : | : dm : - | f : s s : - | r :
+d, : - | d, : d, m, : | : l,d : - | d : d t, : - | t, :
+lo ia A men Ha le lo ia
+Dô dia Ab
+f : - | f : f d' : - | l : d'l : - | l : l s : - | d : d
+ta, : - | d : ta, l, : - | l, : si,f, : - | f, : f, m, : - | m, : s,
+r : - | m : f f : - | d : dl, : - | t, : d d : - | s, : r
+ta, : - | ta, : ta, l, : - | l, : si,f, : - | f, : f, d, : - | d, : d,
+Ha le lo ia Ha le lo ia A
+Dô dia F
+t, : | : ms d' : - | d' : - d' : - | d' : - d' : - | - :
+si, : | : t,r m : - | f : - m : - | r : - m : - | - :
+m : | : ms s : - | l : - s : - | f : - s : - | - :
+m, : | : m,s, d : - | f : - m : - | r : - d : - | - :
+men A men A men A men.
+SOLFA ++
+SOLFA ++
+SOLFA ++
