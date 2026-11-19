@@ -8,10 +8,11 @@ import ProgressBar   from './components/ProgressBar'
 import PianoView     from './components/PianoView'
 import RhythmToolbar from './components/Editor/RhythmToolbar'
 import MethodView    from './components/Learn/MethodView'
+import CatalogView   from './components/Catalog/CatalogView'
 
 const DEGREE_KEYS = new Set(['d', 'r', 'm', 'f', 's', 'l', 't'])
 
-type View = 'player' | 'learn'
+type View = 'player' | 'learn' | 'catalog'
 
 function ModeTabs({ view, setView }: { view: View; setView: (v: View) => void }) {
   const tab = (v: View, label: string): React.CSSProperties => ({
@@ -26,6 +27,7 @@ function ModeTabs({ view, setView }: { view: View; setView: (v: View) => void })
       padding: '8px', background: 'var(--bg)', borderBottom: '1px solid var(--border)',
     }}>
       <button type="button" style={tab('player', '')} onClick={() => setView('player')}>🎹 Lecteur</button>
+      <button type="button" style={tab('catalog', '')} onClick={() => setView('catalog')}>📚 Catalogue</button>
       <button type="button" style={tab('learn', '')} onClick={() => setView('learn')}>🎓 Apprendre</button>
     </div>
   )
@@ -103,10 +105,13 @@ function AppShell() {
 
 function Root() {
   const [view, setView] = useState<View>('player')
+  const { openFile } = usePlayer()
   return (
     <div style={{ display:'flex', flexDirection:'column', height:'100vh' }}>
       <ModeTabs view={view} setView={setView} />
-      {view === 'player' ? <AppShell /> : <MethodView />}
+      {view === 'player'  && <AppShell />}
+      {view === 'learn'   && <MethodView />}
+      {view === 'catalog' && <CatalogView onOpen={text => { openFile(text); setView('player') }} />}
     </div>
   )
 }
