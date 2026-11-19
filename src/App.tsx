@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
+import { editModelToText } from './domain/serialize'
 import { PlayerProvider, usePlayer } from './state/PlayerContext'
 import { EditorProvider, useEditor } from './state/EditorContext'
-import { PrefsProvider } from './state/PrefsContext'
+import { PrefsProvider, usePrefs } from './state/PrefsContext'
 import { LibraryProvider, useLibrary, newId } from './state/LibraryContext'
 import GuidedEditor, { type Draft } from './components/Editor/GuidedEditor'
 import MethodView    from './components/Learn/MethodView'
@@ -45,7 +46,13 @@ function BottomNav({ view, setView }: { view: View; setView: (v: View) => void }
 /** Global behaviours: drag & drop, space = play/pause, edit-mode keys, listen mode. */
 function GlobalBehaviours({ onOpened }: { onOpened: () => void }) {
   const { score, isPlaying, play, pause, openFile } = usePlayer()
-  const { isEditing, move, apply, exit } = useEditor()
+  const { isEditing, move, apply, exit, model, docId } = useEditor()
+  const lib = useLibrary()
+  // A score created in the app is saved to the library on every edit: nothing to lose.
+  useEffect(() => {
+    if (docId && model) lib.save({ id: docId, name: model.meta.title || 'Nouvelle partition', text: editModelToText(model) })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [model, docId])
   useListenMode()
   useMySound()
 
@@ -91,7 +98,14 @@ function GlobalBehaviours({ onOpened }: { onOpened: () => void }) {
       else if (e.key === '2') { e.preventDefault(); apply({ type: 'rhythm', value: 'pair' }) }
       else if (e.key === '3') { e.preventDefault(); apply({ type: 'rhythm', value: 'tie' }) }
       else if (e.key === '4') { e.preventDefault(); apply({ type: 'rhythm', value: 'rest' }) }
-      else if (DEGREE_KEYS.has(e.key.toLowerCase())) { e.preventDefault(); apply({ type: 'degree', value: e.key.toLowerCase() }) }
+      else {
+        // Note letters: plain = natural · Shift = sharp (Maj+D → di) · Ctrl or Alt = flat (Ctrl+D → da).
+        // Alt is there because Ctrl+T (si bémol) is reserved by browsers. e.code covers macOS, where ⌥D types ∂.
+        const letter = /^[a-z]$/i.test(e.key) ? e.key.toLowerCase() : e.code.startsWith('Key') ? e.code.slice(3).toLowerCase() : ''
+        if (!DEGREE_KEYS.has(letter) || e.metaKey || (e.ctrlKey && e.altKey)) return
+        e.preventDefault()
+        apply({ type: 'degree', value: letter, chromatic: e.shiftKey ? 1 : e.ctrlKey || e.altKey ? -1 : 0 })
+      }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -114,6 +128,7 @@ function Root() {
 function LandscapeRoot() {
   const [view, setView] = useState<View>('listen')
   const { openFile } = usePlayer()
+  const { editNew } = useEditor()
   const lib = useLibrary()
   const [draft, setDraft] = useState<Draft | null>(null)
   const active = view === 'editor' ? 'library' : view
@@ -134,7 +149,8 @@ function LandscapeRoot() {
         ))}
       </nav>
       <main style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column', paddingRight: 'env(safe-area-inset-right)' }}>
-        {view === 'library' && <CatalogView onOpen={text => { openFile(text); setView('listen') }} onFix={d => { setDraft(d); setView('editor') }} />}
+        {view === 'library' && <CatalogView onOpen={text => { openFile(text); setView('listen') }} onFix={d => { setDraft(d); setView('editor') }}
+          onCreate={(text, id) => { openFile(text); editNew(id); setView('score') }} />}
         {view === 'listen' && <ScorePane withPiano />}
         {view === 'score' && <ScorePane withPiano={false} />}
         {view === 'choir' && <ChoirPanel />}
@@ -154,10 +170,26 @@ function LandscapeRoot() {
 function DesktopRoot() {
   const [view, setView] = useState<View>('listen')
   const { openFile, score } = usePlayer()
+  const { editNew } = useEditor()
   const lib = useLibrary()
   const [draft, setDraft] = useState<Draft | null>(null)
   const active = view === 'editor' ? 'listen' : view
-  const showSide = view === 'listen' || view === 'score'
+  const { panel, library, set } = usePrefs()
+  const hasSide = view === 'listen' || view === 'score'
+  const showSide = hasSide && panel
+  const togglePanel = () => set('panel', !panel)
+  const toggleLibrary = () => set('library', !library)
+  // Ctrl+B / ⌘B: options column (right). Ctrl+Alt+B / ⌘⌥B: library (left). Like Claude's sidebar.
+  // e.code, not e.key: Alt changes the typed character on some layouts (macOS ⌥B = ∫).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey) || e.shiftKey || e.code !== 'KeyB') return
+      e.preventDefault()
+      if (e.altKey) set('library', !library); else set('panel', !panel)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [panel, library, set])
   const [current, setCurrent] = useState<string>()
   const open = (text: string) => { openFile(text); setCurrent(text); if (view === 'editor' || view === 'learn') setView('listen') }
   const col: React.CSSProperties = { display: 'flex', flexDirection: 'column', minHeight: 0, minWidth: 0, background: 'var(--bg)' }
@@ -165,6 +197,16 @@ function DesktopRoot() {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', background: 'var(--bg)' }}>
       <GlobalBehaviours onOpened={() => setView('listen')} />
       <header style={{ flex: 'none', height: 56, padding: '0 20px', display: 'flex', alignItems: 'center', gap: 18, background: 'var(--bg2)', borderBottom: '1px solid var(--border)' }}>
+        <button type="button" onClick={toggleLibrary} aria-pressed={library} aria-controls="library-panel"
+          aria-label={library ? 'Masquer la bibliothèque (Ctrl+Alt+B)' : 'Afficher la bibliothèque (Ctrl+Alt+B)'}
+          title={library ? 'Masquer la bibliothèque (Ctrl+Alt+B)' : 'Afficher la bibliothèque (Ctrl+Alt+B)'} style={{
+            width: 36, height: 36, marginLeft: -8, borderRadius: 8, border: 'none', display: 'grid', placeItems: 'center',
+            background: library ? 'var(--bg4)' : 'transparent', color: 'var(--text)',
+          }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <rect x="3" y="4" width="18" height="16" rx="2" /><path d="M9 4v16" />{library && <path d="M6.5 9v6" />}
+          </svg>
+        </button>
         <b style={{ fontSize: 18, fontWeight: 800 }}>Msolfa</b>
         <nav aria-label="Navigation" style={{ display: 'flex', padding: 2, borderRadius: 10, background: 'var(--bg4)' }}>
           {DESKTOP_TABS.map(t => (
@@ -176,11 +218,30 @@ function DesktopRoot() {
           ))}
         </nav>
         <span style={{ flex: 1 }} />
-        <span style={{ fontSize: 12, color: 'var(--text2)' }}>Espace : lecture / pause</span>
+        <span style={{ fontSize: 12, color: 'var(--text2)' }}>Espace : lecture / pause · Ctrl+Alt+B : bibliothèque · Ctrl+B : options</span>
+        {hasSide && (
+          <button type="button" onClick={togglePanel} aria-pressed={panel} aria-controls="choir-panel"
+            aria-label={panel ? 'Masquer les options (Ctrl+B)' : 'Afficher les options (Ctrl+B)'} title={panel ? 'Masquer les options (Ctrl+B)' : 'Afficher les options (Ctrl+B)'} style={{
+              width: 36, height: 36, borderRadius: 8, border: 'none', display: 'grid', placeItems: 'center',
+              background: panel ? 'var(--bg4)' : 'transparent', color: 'var(--text)',
+            }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <rect x="3" y="4" width="18" height="16" rx="2" /><path d="M15 4v16" />{panel && <path d="M17.5 9v6" />}
+            </svg>
+          </button>
+        )}
       </header>
-      <div style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: showSide ? '280px minmax(0, 1fr) 300px' : '280px minmax(0, 1fr)', gap: 1, background: 'var(--border)' }}>
-        <aside style={col} aria-label="Bibliothèque">
-          <CatalogView compact activeText={score ? current : undefined} onOpen={open} onFix={d => { setDraft(d); setView('editor') }} />
+      {/* The column slides closed (width → 0) rather than unmounting, so it reopens instantly. */}
+      <div style={{
+        flex: 1, minHeight: 0, display: 'grid', gap: 1, background: 'var(--border)', transition: 'grid-template-columns .2s ease',
+        gridTemplateColumns: `${library ? 280 : 0}px minmax(0, 1fr)${hasSide ? ` ${showSide ? 300 : 0}px` : ''}`,
+      }}>
+        <aside id="library-panel" aria-label="Bibliothèque" aria-hidden={!library} {...({ inert: library ? undefined : '' } as object)}
+          style={{ ...col, overflow: 'hidden' }}>
+          <div style={{ width: 280, flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+            <CatalogView compact activeText={score ? current : undefined} onOpen={open} onFix={d => { setDraft(d); setView('editor') }}
+              onCreate={(text, id) => { openFile(text); setCurrent(text); editNew(id); setView('score') }} />
+          </div>
         </aside>
         <main style={col}>
           {view === 'listen' && <ListenView />}
@@ -193,33 +254,75 @@ function DesktopRoot() {
             }} />
           )}
         </main>
-        {showSide && <aside style={{ ...col, background: 'var(--bg)' }} aria-label="Chorale"><ChoirPanel /></aside>}
+        {hasSide && (
+          <aside id="choir-panel" aria-label="Chorale" aria-hidden={!showSide} {...({ inert: showSide ? undefined : '' } as object) /* React 18 types lack `inert`: hidden column can't take focus */}
+            style={{ ...col, background: 'var(--bg)', overflow: 'hidden' }}>
+            <div style={{ width: 300, flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}><ChoirPanel /></div>
+          </aside>
+        )}
       </div>
     </div>
   )
 }
 
+const VIEW_LABEL: Record<View, string> = {
+  library: 'Bibliothèque', listen: 'Écoute', score: 'Partition', choir: 'Chorale', learn: 'Apprendre', editor: 'Éditeur',
+}
+type NavState = { view: View; from: View | null; depth: number }
+
+/**
+ * Mobile navigation on top of the browser history: every screen change is a
+ * history entry, so the phone's back button / iOS back swipe return to the
+ * previous screen instead of leaving the app, and screens show a « ‹ Retour ».
+ */
+function useMobileNav(initial: View) {
+  const [nav, setNav] = useState<NavState>(() => {
+    const s = history.state as NavState | null
+    return s?.view ? s : { view: initial, from: null, depth: 0 }
+  })
+  useEffect(() => {
+    history.replaceState(nav, '')
+    const onPop = (e: PopStateEvent) => setNav((e.state as NavState | null)?.view ? e.state : { view: initial, from: null, depth: 0 })
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+  // Side effect outside the state updater: StrictMode runs updaters twice and would push two entries.
+  const go = (v: View) => {
+    if (v === nav.view) return
+    const next = { view: v, from: nav.view, depth: nav.depth + 1 }
+    history.pushState(next, '')
+    setNav(next)
+  }
+  // Back = real history step when we pushed one, else (fresh load / deep link) to the library.
+  const back = () => { if (nav.depth > 0) history.back(); else go('library') }
+  return { view: nav.view, from: nav.from, go, back }
+}
+
 function MobileRoot() {
-  const [view, setView] = useState<View>('library')
+  const { view, from, go: setView, back: goBack } = useMobileNav('library')
   const { openFile } = usePlayer()
+  const { editNew } = useEditor()
   const lib = useLibrary()
   const [draft, setDraft] = useState<Draft | null>(null)
   const goListen = () => setView('listen')
   const goLibrary = () => setView('library')
+  const back = { label: VIEW_LABEL[from && from !== view ? from : 'library'], go: goBack }
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', maxWidth: 960, margin: '0 auto', background: 'var(--bg)' }}>
       <GlobalBehaviours onOpened={goListen} />
       <main style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-        {view === 'library' && <CatalogView onOpen={text => { openFile(text); goListen() }} onFix={d => { setDraft(d); setView('editor') }} />}
+        {view === 'library' && <CatalogView onOpen={text => { openFile(text); goListen() }} onFix={d => { setDraft(d); setView('editor') }}
+          onCreate={(text, id) => { openFile(text); editNew(id); setView('score') }} />}
         {view === 'editor' && draft && (
-          <GuidedEditor key={draft.id ?? draft.name} draft={draft} onCancel={goLibrary} onSave={(d, text) => {
+          <GuidedEditor key={draft.id ?? draft.name} draft={draft} onCancel={goBack} onSave={(d, text) => {
             lib.save({ id: d.id ?? newId(d.name), name: d.name, text, origin: d.origin })
             openFile(text); goListen()
           }} />
         )}
-        {view === 'listen'  && <ListenView goLibrary={goLibrary} />}
-        {view === 'score'   && <ScoreScreen goLibrary={goLibrary} />}
-        {view === 'choir'   && <ChoirView goLibrary={goLibrary} />}
+        {view === 'listen'  && <ListenView goLibrary={goLibrary} back={back} />}
+        {view === 'score'   && <ScoreScreen goLibrary={goLibrary} back={back} />}
+        {view === 'choir'   && <ChoirView goLibrary={goLibrary} back={back} />}
         {view === 'learn'   && <MethodView />}
       </main>
       <BottomNav view={view} setView={setView} />

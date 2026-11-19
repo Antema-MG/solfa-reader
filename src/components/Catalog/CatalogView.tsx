@@ -1,9 +1,11 @@
 /// <reference types="vite/client" />
 import { useMemo, useState } from 'react'
+import { Icon } from '../Shell/Icon'
 import { parseMsolfa } from '../../domain/parser'
 import type { Score, Voice } from '../../types'
 import { useLibrary, newId } from '../../state/LibraryContext'
 import ImportSheet from './ImportSheet'
+import NewScoreSheet from './NewScoreSheet'
 import type { Draft } from '../Editor/GuidedEditor'
 
 // Single source of the catalog location (see catalog/README.md).
@@ -64,7 +66,7 @@ function Card({ e, onOpen, compact, active }: { e: Entry; onOpen: (e: Entry) => 
       <div style={{ minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
         <div style={{ display: 'flex', gap: 8, alignItems: 'baseline', justifyContent: 'space-between' }}>
           <span style={{ fontSize: 14, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.title}</span>
-          <span title="Partition valide" style={{ flex: 'none', fontSize: 10, fontWeight: 800, color: 'var(--green)' }}>✓ OK</span>
+          <span title="Partition valide" style={{ flex: 'none', color: 'var(--green)' }}><Icon name="checkCircle" size={15} /></span>
         </div>
         {!compact && <span style={{ fontSize: 12, color: 'var(--text2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minHeight: 16 }}>
           {e.composer || '—'}
@@ -88,9 +90,15 @@ function Card({ e, onOpen, compact, active }: { e: Entry; onOpen: (e: Entry) => 
   )
 }
 
-export default function CatalogView({ onOpen, onFix, compact = false, activeText }: { onOpen: (text: string) => void; onFix: (d: Draft) => void; compact?: boolean; activeText?: string }) {
+export default function CatalogView({ onOpen, onFix, onCreate, compact = false, activeText }: {
+  onOpen: (text: string) => void; onFix: (d: Draft) => void
+  /** A new blank score was saved to the library: open it for editing. */
+  onCreate?: (text: string, id: string) => void
+  compact?: boolean; activeText?: string
+}) {
   const lib = useLibrary()
-  const [adding, setAdding] = useState(false)
+  const [adding, setAdding] = useState<DOMRect | null>(null)  // the "+" button's box: the web menu drops from it
+  const [creating, setCreating] = useState(false)
   const [q, setQ] = useState('')
   const [meter, setMeter] = useState<string | null>(null)
   const [key, setKey] = useState<string | null>(null)
@@ -125,8 +133,9 @@ export default function CatalogView({ onOpen, onFix, compact = false, activeText
           <span style={{ fontSize: 13, color: 'var(--text3)' }}>
             {shown.length === ok.length ? `${ok.length} partitions OK` : `${shown.length} / ${ok.length} partitions`}
           </span>
-          <button type="button" aria-label="Ajouter une partition" onClick={() => setAdding(true)}
-            style={{ marginLeft: 'auto', width: 44, height: 44, borderRadius: 22, border: 'none', background: 'var(--ink)', color: 'var(--on-ink)', fontSize: 24, lineHeight: 1 }}>+</button>
+          <button type="button" aria-label="Ajouter une partition" aria-haspopup="menu" aria-expanded={!!adding} onClick={e => setAdding(e.currentTarget.getBoundingClientRect())}
+            style={{ marginLeft: 'auto', width: 36, height: 36, borderRadius: 18, border: 'none', display: 'grid', placeItems: 'center', background: adding ? 'var(--bg4)' : 'var(--fill)', color: 'var(--text)' }}>
+            <Icon name="plus" size={20} /></button>
         </div>
 
         <div style={{ position: 'relative' }}>
@@ -139,13 +148,13 @@ export default function CatalogView({ onOpen, onFix, compact = false, activeText
               border: '1px solid var(--border2)', outline: 'none',
             }}
           />
-          <span style={{ position: 'absolute', left: 13, top: 10, color: 'var(--text3)' }}>🔍</span>
+          <span style={{ position: 'absolute', left: 12, top: 11, color: 'var(--text3)', pointerEvents: 'none' }}><Icon name="search" size={16} /></span>
         </div>
 
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-          <span style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.08em' }}>Mesure</span>
+          <span style={{ fontSize: 13, color: 'var(--text2)' }}>Mesure</span>
           {meters.map(m => <button key={m} type="button" style={chip(meter === m)} onClick={() => setMeter(meter === m ? null : m)}>{m}</button>)}
-          <span style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.08em', marginLeft: 10 }}>Ton</span>
+          <span style={{ fontSize: 13, color: 'var(--text2)', marginLeft: 10 }}>Ton</span>
           {keys.map(k => <button key={k} type="button" style={chip(key === k)} onClick={() => setKey(key === k ? null : k)}>{k}</button>)}
           {(q || meter || key) && (
             <button type="button" onClick={() => { setQ(''); setMeter(null); setKey(null) }}
@@ -167,7 +176,7 @@ export default function CatalogView({ onOpen, onFix, compact = false, activeText
           <div style={{ marginTop: 10, borderTop: '1px solid var(--border)', paddingTop: 12 }}>
             <button type="button" onClick={() => setShowBad(s => !s)}
               style={{ background: 'none', border: 'none', color: 'var(--text3)', fontSize: 12 }}>
-              {showBad ? '▾' : '▸'} {bad.length} fichier{bad.length > 1 ? 's' : ''} à corriger
+              <Icon name={showBad ? 'chevronDown' : 'chevronRight'} size={12} /> {bad.length} fichier{bad.length > 1 ? 's' : ''} à corriger
             </button>
             {showBad && bad.map(e => (
               <button key={e.id} type="button" onClick={() => onFix({ id: e.user ? e.id : undefined, name: e.name, text: e.text, origin: e.user ? e.origin : e.id })}
@@ -180,13 +189,20 @@ export default function CatalogView({ onOpen, onFix, compact = false, activeText
           </div>
         )}
       </div>
-      {adding && <ImportSheet onClose={() => setAdding(false)}
+      {adding && <ImportSheet anchor={adding} onClose={() => setAdding(null)}
         onFile={(name, text) => {
-          setAdding(false)
+          setAdding(null)
           if (parseMsolfa(text).success) { lib.save({ id: newId(name), name, text }); onOpen(text) }
           else onFix({ name, text })
         }}
-        onNew={text => { setAdding(false); onFix({ name: 'nouvelle-partition', text }) }} />}
+        onNew={text => { setAdding(null); onFix({ name: 'nouvelle-partition', text }) }}
+        onBlank={() => { setAdding(null); setCreating(true) }} />}
+      {creating && <NewScoreSheet onClose={() => setCreating(false)} onCreate={(text, title) => {
+        const id = newId(title)
+        lib.save({ id, name: title, text })
+        setCreating(false)
+        if (onCreate) onCreate(text, id); else onOpen(text)
+      }} />}
     </div>
   )
 }

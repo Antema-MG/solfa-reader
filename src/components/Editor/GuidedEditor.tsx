@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react'
+import { Icon } from '../Shell/Icon'
 import { diagnose, fixAll } from '../../domain/diagnose'
 import { parseMsolfa } from '../../domain/parser'
 import { pill } from '../Shell/ui'
@@ -51,20 +52,20 @@ export default function GuidedEditor({ draft, onCancel, onSave }: {
   return (
     <>
       <header style={{ flex: 'none', padding: '10px 12px 6px', display: 'flex', alignItems: 'center', gap: 6 }}>
-        <button type="button" onClick={onCancel} style={{ minHeight: 44, border: 'none', background: 'transparent', color: 'var(--accent-ink)', fontSize: 15 }}>‹ Retour</button>
+        <button type="button" onClick={onCancel} style={{ minHeight: 44, marginLeft: -6, padding: 0, border: 'none', background: 'transparent', color: 'var(--accent-ink)', fontSize: 16, display: 'inline-flex', alignItems: 'center' }}><Icon name="chevronLeft" size={26} />Retour</button>
         <div style={{ flex: 1, minWidth: 0, textAlign: 'center' }}>
           <div style={{ fontSize: 14, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{title || 'Nouvelle partition'}</div>
           <div style={{ fontSize: 11, color: 'var(--text2)' }}>Éditeur guidé</div>
         </div>
         <button type="button" onClick={() => { const u = undo[undo.length - 1]; if (u != null) { setText(u); setUndo(x => x.slice(0, -1)) } }}
-          disabled={!undo.length} aria-label="Annuler" style={{ width: 44, height: 44, border: 'none', background: 'transparent', fontSize: 20, opacity: undo.length ? 1 : 0.3 }}>↶</button>
+          disabled={!undo.length} aria-label="Annuler" style={{ width: 44, height: 44, border: 'none', background: 'transparent', color: 'var(--text)', opacity: undo.length ? 1 : 0.3 }}><Icon name="undo" /></button>
       </header>
 
       <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '0 12px', display: 'flex', flexDirection: 'column', gap: 10 }}>
         <section aria-live="polite" style={{ background: 'var(--bg2)', borderRadius: 16, padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 4 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: 32 }}>
-            <b style={{ fontSize: 14, color: valid ? 'var(--green2)' : 'var(--s)' }}>
-              {valid ? '✓ Partition valide' : issues.length ? `${issues.length} point${issues.length > 1 ? 's' : ''} à corriger` : 'Partition à vérifier'}
+            <b style={{ fontSize: 14, color: valid ? 'var(--green2)' : 'var(--s)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              {valid ? <><Icon name="checkCircle" size={16} />Partition valide</> : issues.length ? `${issues.length} point${issues.length > 1 ? 's' : ''} à corriger` : 'Partition à vérifier'}
             </b>
             {hasFixes && <button type="button" onClick={() => change(fixAll(text))} style={{ ...pill(false, 32), background: 'var(--bg3)', color: 'var(--text)', border: 'none' }}>Tout corriger</button>}
           </div>

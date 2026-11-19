@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { Icon } from '../Shell/Icon'
 import abcjs from 'abcjs'
 import { useMethod } from '../../hooks/useMethod'
 import { lessonToAbc } from '../../domain/method'
@@ -71,20 +72,20 @@ export default function MethodView() {
         {/* Status / feedback */}
         <div style={{ minHeight: 24, display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
           {M.completed ? (
-            <span style={{ fontSize: 15, fontWeight: 700, color: '#0be881' }}>🎉 Leçon réussie !</span>
+            <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--green)', display: 'inline-flex', alignItems: 'center', gap: 6 }}><Icon name="checkCircle" size={18} />Leçon réussie</span>
           ) : (
             <span style={{ fontSize: 14, color: 'var(--text2)' }}>
               Joue : <b style={{ color: 'var(--text)' }}>{midiToFrenchName(M.expected!, 'C')}</b>
               {' '}(doigt {M.lesson.exercise[M.noteIdx].finger}, {HAND_LABEL[M.lesson.exercise[M.noteIdx].hand]})
             </span>
           )}
-          {M.wrong && !M.completed && <span style={{ color: '#ff6b6b', fontSize: 13 }}>✗ pas la bonne note</span>}
+          {M.wrong && !M.completed && <span style={{ color: 'var(--s)', fontSize: 13, display: 'inline-flex', alignItems: 'center', gap: 6 }}><Icon name="xCircle" size={15} />Pas la bonne note</span>}
         </div>
 
         {/* Mic status */}
         {M.micOn && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ fontSize: 13, color: 'var(--text3)' }}>🎤 J’entends :</span>
+            <span style={{ fontSize: 13, color: 'var(--text3)', display: 'inline-flex', alignItems: 'center', gap: 6 }}><Icon name="mic" size={15} />J’entends :</span>
             <b style={{ fontSize: 15, color: M.detected ? 'var(--accent)' : 'var(--text3)', minWidth: 40 }}>
               {M.detected ? midiToFrenchName(M.detected.midi, 'C') : '—'}
             </b>
@@ -104,15 +105,15 @@ export default function MethodView() {
         {/* Controls */}
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           <button type="button" onClick={M.playModel} style={pill('linear-gradient(90deg,#34e7e4,#0be881)')}>
-            ▶ Écouter le modèle
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Icon name="play" size={15} />Écouter le modèle</span>
           </button>
           <button type="button" onClick={M.toggleMic}
             style={pill(M.micOn ? 'linear-gradient(90deg,#ff6b6b,#ff9f43)' : 'var(--bg4)')}>
-            <span style={{ color: M.micOn ? '#0f0f12' : 'var(--text)' }}>{M.micOn ? '⏹ Couper le micro' : '🎤 Activer le micro'}</span>
+            <span style={{ color: M.micOn ? '#0f0f12' : 'var(--text)' }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Icon name={M.micOn ? 'stop' : 'mic'} size={15} />{M.micOn ? 'Couper le micro' : 'Activer le micro'}</span></span>
           </button>
           {M.completed && M.lessonIdx < M.lessons.length - 1 && (
             <button type="button" onClick={M.nextLesson} style={pill('linear-gradient(90deg,#7b61ff,#a55eea)')}>
-              <span style={{ color: '#fff' }}>Leçon suivante →</span>
+              <span style={{ color: '#fff', display: 'inline-flex', alignItems: 'center', gap: 6 }}>Leçon suivante<Icon name="arrowRight" size={15} /></span>
             </button>
           )}
         </div>

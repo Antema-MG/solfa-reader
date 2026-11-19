@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import type { Voice, EditCell, EditSlot, EditNote } from '../../types'
 import { useEditor } from '../../state/EditorContext'
 
@@ -15,6 +15,15 @@ function slotText(s: EditSlot): string {
 export default function EditorGrid() {
   const { model, selection, select } = useEditor()
   const wrapRef = useRef<HTMLDivElement>(null)
+  const [width, setWidth] = useState(360)
+
+  // Lines of measures follow the available width (like the score view).
+  useEffect(() => {
+    const el = wrapRef.current; if (!el) return
+    const ro = new ResizeObserver(() => setWidth(el.clientWidth))
+    ro.observe(el); setWidth(el.clientWidth)
+    return () => ro.disconnect()
+  }, [model == null])
 
   // Keep the selected cell in view as the user navigates.
   useEffect(() => {
@@ -60,6 +69,12 @@ export default function EditorGrid() {
     return cellBox(text, isSel(b, v, m, j, null), varName, () => select({ block: b, voice: v, measure: m, beat: j, slot: null }))
   }
 
+  // One CSS grid per line of measures: every beat is a column shared by S/A/T/B, so a
+  // two-eighths cell (« d.r ») widens its column for all voices and the | bars stay aligned.
+  const num = model.numerator
+  const perLine = Math.max(1, Math.floor((width - 60) / (num * 46 + 16)))
+  const sep: React.CSSProperties = { color: 'var(--text3)', fontWeight: 300, textAlign: 'center' }
+
   return (
     <div ref={wrapRef} style={{ flex: 1, overflowY: 'auto', padding: '18px 16px', background: 'var(--bg)' }}>
       {model.blocks.map((block, bi) => (
@@ -69,27 +84,34 @@ export default function EditorGrid() {
               {block.comment}
             </div>
           )}
-          {VOICES.map(v => (
-            <div key={v} style={{ display: 'flex', alignItems: 'center', fontFamily: 'var(--mono)', fontSize: 13, marginBottom: 5 }}>
-              <span style={{ width: 26, flex: 'none', fontWeight: 700, color: `var(${VOICE_VAR[v]})` }}>{v}.</span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
-                <span style={{ color: 'var(--text3)', padding: '0 4px', fontWeight: 300 }}>||</span>
-                {block.measures.map((measure, mi) => (
-                  <span key={mi} style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
-                    {measure.beats[v].map((cell, j) => (
-                      <span key={j} style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
-                        {j > 0 && <span style={{ color: 'var(--text3)' }}>:</span>}
-                        {renderCell(cell, bi, v, mi, j)}
-                      </span>
-                    ))}
-                    <span style={{ color: 'var(--text3)', padding: '0 4px', fontWeight: 300 }}>
-                      {mi < block.measures.length - 1 ? '|' : '||'}
-                    </span>
-                  </span>
-                ))}
-              </span>
-            </div>
-          ))}
+          {Array.from({ length: Math.ceil(block.measures.length / perLine) }, (_, li) => {
+            const first = li * perLine
+            const ms = block.measures.slice(first, first + perLine)
+            const last = first + ms.length === block.measures.length
+            // label · opening bar · per measure: cell (: cell)* then its bar
+            const cols = ['26px', '14px', ...ms.flatMap(() => [...Array.from({ length: num }, (_, j) => j ? ['8px', 'auto'] : ['auto']).flat(), '16px'])].join(' ')
+            return (
+              <div key={li} style={{
+                display: 'grid', gridTemplateColumns: cols, justifyContent: 'start', alignItems: 'center',
+                rowGap: 5, fontFamily: 'var(--mono)', fontSize: 13, marginBottom: 8,
+              }}>
+                {VOICES.map(v => [
+                  <span key={`${v}l`} style={{ fontWeight: 700, color: `var(${VOICE_VAR[v]})` }}>{v}.</span>,
+                  <span key={`${v}o`} style={sep}>{li === 0 ? '||' : '|'}</span>,
+                  ...ms.flatMap((measure, k) => {
+                    const mi = first + k
+                    return [
+                      ...measure.beats[v].flatMap((cell, j) => [
+                        ...(j ? [<span key={`${v}${mi}c${j}`} style={sep}>:</span>] : []),
+                        <span key={`${v}${mi}-${j}`} style={{ justifySelf: 'center' }}>{renderCell(cell, bi, v, mi, j)}</span>,
+                      ]),
+                      <span key={`${v}${mi}b`} style={sep}>{last && k === ms.length - 1 ? '||' : '|'}</span>,
+                    ]
+                  }),
+                ])}
+              </div>
+            )
+          })}
         </div>
       ))}
     </div>

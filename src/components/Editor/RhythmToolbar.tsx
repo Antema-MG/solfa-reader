@@ -1,4 +1,5 @@
 import type { EditCell } from '../../types'
+import { Icon } from '../Shell/Icon'
 import { useEditor } from '../../state/EditorContext'
 
 const DEGREES = ['d', 'r', 'm', 'f', 's', 'l', 't']
@@ -57,14 +58,14 @@ export default function RhythmToolbar() {
 
       <span style={sep} />
 
-      <button title="Dièse" style={chipStyle(activeNote?.chromatic === 1)}
+      <button title="Dièse — Maj+note (Maj+D = do♯), ou + après la note" aria-label="Dièse" style={chipStyle(activeNote?.chromatic === 1)}
         onClick={() => apply({ type: 'accidental', value: 'sharp' })}>♯</button>
-      <button title="Bémol" style={chipStyle(activeNote?.chromatic === -1)}
+      <button title="Bémol — Ctrl+note ou Alt+note (Ctrl+D = do♭), ou - après la note" aria-label="Bémol" style={chipStyle(activeNote?.chromatic === -1)}
         onClick={() => apply({ type: 'accidental', value: 'flat' })}>♭</button>
       <button title="Octave +" style={chipStyle(false)}
-        onClick={() => apply({ type: 'octave', value: 1 })}>↑</button>
+        onClick={() => apply({ type: 'octave', value: 1 })}><Icon name="arrowUp" size={16} /></button>
       <button title="Octave −" style={chipStyle(false)}
-        onClick={() => apply({ type: 'octave', value: -1 })}>↓</button>
+        onClick={() => apply({ type: 'octave', value: -1 })}><Icon name="arrowDown" size={16} /></button>
 
       <span style={{ flex: 1 }} />
 
