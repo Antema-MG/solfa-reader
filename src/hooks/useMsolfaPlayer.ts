@@ -15,17 +15,17 @@ export function useMsolfaPlayer(): MsolfaPlayerState {
   const { openFile, setTempo, setTonic }           = useScore(core)
   const { play, pause, stop, seekTo }              = useTransport(core)
   const { toggleMute, toggleSolo, clearSelection } = useMixer(core)
-  const { setTimbre, setInstrument, setVoiceInstrument } = useInstrument(core)
+  const { setTimbre, setInstrument, setVoiceInstrument, setSung, setChoirFx, setTakes } = useInstrument(core)
 
   return {
     score: core.score, error: core.error, status: core.status,
     isPlaying: core.status === 'playing',
     tempo: core.tempo, tonic: core.tonic, timbre: core.timbre,
-    instrumentId: core.instrumentId, instrumentLoading: core.instrumentLoading,
+    instrumentId: core.instrumentId, instrumentLoading: core.instrumentLoading, sung: core.sung,
     muted: core.muted, solo: core.solo,
     currentBeat: core.currentBeat, litMidis: core.litMidis,
     openFile, play, pause, stop, seekTo,
-    setTempo, setTonic, setTimbre, setInstrument, setVoiceInstrument,
+    setTempo, setTonic, setTimbre, setInstrument, setVoiceInstrument, setSung, setChoirFx, setTakes,
     toggleMute, toggleSolo, clearSelection,
   }
 }

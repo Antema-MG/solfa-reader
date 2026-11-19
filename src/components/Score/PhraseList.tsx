@@ -49,8 +49,8 @@ export default function PhraseList({ dense = false }: { dense?: boolean }) {
         return (
           <section key={bi} style={{ flex: 'none', background: 'var(--bg2)', borderRadius: dense ? 12 : 18, padding: dense ? '4px 8px 6px' : '10px 10px 12px', display: 'flex', flexDirection: 'column', gap: dense ? 4 : 10 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', padding: '0 2px' }}>
-              <span style={{ fontSize: dense ? 10 : 12, fontWeight: 700, color: 'var(--text2)', letterSpacing: '.06em' }}>
-                PHRASE {bi + 1}
+              <span style={{ fontSize: dense ? 11 : 13, fontWeight: 600, color: 'var(--text2)' }}>
+                Phrase {bi + 1}
               </span>
               <span style={{ fontSize: dense ? 10 : 11, color: 'var(--text2)' }}>mes. {first}–{last}</span>
             </div>

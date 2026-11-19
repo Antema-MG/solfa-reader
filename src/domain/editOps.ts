@@ -5,7 +5,8 @@ const VOICES: Voice[] = ['S', 'A', 'T', 'B']
 /** A toolbar/keyboard edit, applied to the currently selected cell. */
 export type EditAction =
   | { type: 'rhythm'; value: 'note' | 'pair' | 'tie' | 'rest' }
-  | { type: 'degree'; value: string }
+  /** chromatic: 1 sharp, -1 flat, 0 / absent natural (typing a note replaces its accidental). */
+  | { type: 'degree'; value: string; chromatic?: number }
   | { type: 'accidental'; value: 'sharp' | 'flat' }
   | { type: 'octave'; value: 1 | -1 }
 
@@ -70,7 +71,7 @@ export function applyToCell(cell: EditCell, slot: 'a' | 'b' | null, action: Edit
     }
     case 'degree': {
       const setNote = (n: EditNote | null): EditNote =>
-        n ? { ...n, degree: action.value } : { kind: 'note', degree: action.value, chromatic: 0, octave: '' }
+        n ? { ...n, degree: action.value, chromatic: action.chromatic ?? 0 } : { kind: 'note', degree: action.value, chromatic: action.chromatic ?? 0, octave: '' }
       if (cell.kind === 'pair') {
         return slot === 'b'
           ? { ...cell, b: setNote(cell.b) }

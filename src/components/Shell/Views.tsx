@@ -1,4 +1,5 @@
 import { useEffect, type CSSProperties } from 'react'
+import { Icon } from './Icon'
 import type { Voice } from '../../types'
 import { usePlayer } from '../../state/PlayerContext'
 import { useEditor } from '../../state/EditorContext'
@@ -8,7 +9,9 @@ import PhraseList from '../Score/PhraseList'
 import Keyboard from '../Keyboard/Keyboard'
 import EditorGrid from '../Editor/EditorGrid'
 import RhythmToolbar from '../Editor/RhythmToolbar'
-import { DisplayMenu, MODE_LABEL, SettingsChips, Transport, VoiceBar, pill, useWide } from './ui'
+import { Combo, DisplayMenu, usePiano, MODE_LABEL, SettingsChips, SoundCombo, SoundPicker, Transport, VoiceBar, pill, useDesktop, useWide } from './ui'
+import type { SungStyle } from '../../domain/choir'
+import { loadTakes } from '../../services/recordedChoir'
 
 const VOICES: Voice[] = ['S', 'A', 'T', 'B']
 const COLOR: Record<Voice, string> = { S: 'var(--s)', A: 'var(--a)', T: 'var(--t)', B: 'var(--b)' }
@@ -31,24 +34,40 @@ export function useListenMode() {
 
 /** Gives "ma voix" its own instrument (piano, choir...), the others keep the main one. */
 export function useMySound() {
-  const { mySound, myVoice } = usePrefs()
-  const { setVoiceInstrument } = usePlayer()
+  const { mySound, myVoice, singers, reverb } = usePrefs()
+  const { setVoiceInstrument, setChoirFx } = usePlayer()
   useEffect(() => {
-    VOICES.forEach(v => setVoiceInstrument(v, v === myVoice && mySound !== 'same' ? (mySound as InstrumentId) : null))
+    VOICES.forEach(v => setVoiceInstrument(v, v === myVoice && mySound !== 'same' ? (mySound as InstrumentId | SungStyle) : null))
   }, [mySound, myVoice, setVoiceInstrument])
+  useEffect(() => { setChoirFx({ singers, reverb }) }, [singers, reverb, setChoirFx])
+  const { setTakes } = usePlayer()
+  useEffect(() => { void loadTakes().then(setTakes) }, [setTakes])
 }
 
 export const SOUNDS: { value: MySound; label: string }[] = [
   { value: 'same', label: 'Comme les autres voix' },
+  { value: 'recorded', label: 'Chœur enregistré (vraies voix)' },
+  { value: 'solfege', label: 'Solfège chanté (do, ré, mi…)' },
+  { value: 'a', label: 'Chœur réaliste « Ah »' },
   { value: 'acoustic_grand_piano', label: 'Piano' },
   { value: 'synth_choir', label: 'Voix synthétisée' },
   { value: 'choir_aahs', label: 'Chœur « Ahhh »' },
   { value: 'voice_oohs', label: 'Chœur « Ohhh »' },
 ]
 
-function Header({ title, sub, right }: { title: string; sub?: string; right?: React.ReactNode }) {
+/** Where the back arrow leads (mobile only): label of the previous screen + action. */
+export type Back = { label: string; go: () => void }
+
+function Header({ title, sub, right, back }: { title: string; sub?: string; right?: React.ReactNode; back?: Back }) {
+  // Minimal back: a bare chevron (44px tap target) left of the title; the target screen is in the label.
   return (
-    <header style={{ flex: 'none', padding: '14px 12px 8px 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
+    <header style={{ flex: 'none', padding: back ? '10px 12px 8px 4px' : '14px 12px 8px 16px', display: 'flex', alignItems: 'center', gap: back ? 2 : 8 }}>
+      {back && (
+        <button type="button" onClick={back.go} aria-label={`Retour : ${back.label}`} title={back.label} style={{
+          flex: 'none', width: 40, height: 44, padding: 0, border: 'none', background: 'none',
+          display: 'grid', placeItems: 'center', color: 'var(--accent-ink)',
+        }}><Icon name="chevronLeft" size={26} /></button>
+      )}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{title}</div>
         {sub && <div style={{ fontSize: 12, color: 'var(--text2)' }}>{sub}</div>}
@@ -96,15 +115,15 @@ function Progress() {
 }
 
 /** Écoute: all phrases + quiet settings + optional compact piano + transport. */
-export function ListenView({ goLibrary }: { goLibrary?: () => void }) {
+export function ListenView({ goLibrary, back }: { goLibrary?: () => void; back?: Back }) {
   const { score, error, title, sub } = useMeta()
   const { timbre, litMidis, tonic, instrumentLoading } = usePlayer()
-  const { piano } = usePrefs()
+  const [piano] = usePiano()
   const wide = useWide()
-  if (!score) return <><Header title="Écoute" /><NoScore go={goLibrary} />{error && <p style={{ color: 'var(--red-btn)', padding: 16 }}>{error}</p>}</>
+  if (!score) return <><Header title="Écoute" back={back} /><NoScore go={goLibrary} />{error && <p style={{ color: 'var(--red-btn)', padding: 16 }}>{error}</p>}</>
   return (
     <>
-      <Header title={title} sub={sub} right={<DisplayMenu withPiano />} />
+      <Header title={title} sub={sub} back={back} right={<DisplayMenu withPiano />} />
       <div style={{ flex: 'none', padding: '0 16px 8px' }}><VoiceBar /></div>
       <PhraseList />
       <section style={{ flex: 'none', padding: '10px 16px 12px', background: 'var(--bg2)', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -125,14 +144,14 @@ export function ListenView({ goLibrary }: { goLibrary?: () => void }) {
 }
 
 /** Partition: reading view, with edit mode (existing grid editor). */
-export function ScoreScreen({ goLibrary }: { goLibrary?: () => void }) {
+export function ScoreScreen({ goLibrary, back }: { goLibrary?: () => void; back?: Back }) {
   const { score, error, title, sub } = useMeta()
   const { isEditing, enter, exit } = useEditor()
-  if (!score) return <><Header title="Partition" /><NoScore go={goLibrary} />{error && <p style={{ color: 'var(--red-btn)', padding: 16 }}>{error}</p>}</>
+  if (!score) return <><Header title="Partition" back={back} /><NoScore go={goLibrary} />{error && <p style={{ color: 'var(--red-btn)', padding: 16 }}>{error}</p>}</>
   return (
     <>
-      <Header title={title} sub={sub} right={<>
-        <button type="button" onClick={isEditing ? exit : enter} style={{ ...pill(isEditing, 36), marginRight: 2 }}>{isEditing ? '✓ Édition' : '✎ Éditer'}</button>
+      <Header title={title} sub={sub} back={back} right={<>
+        <button type="button" onClick={isEditing ? exit : enter} style={{ ...pill(isEditing, 36), marginRight: 2, display: 'inline-flex', alignItems: 'center', gap: 6 }}><Icon name={isEditing ? 'check' : 'pencil'} size={16} />{isEditing ? 'Terminer' : 'Éditer'}</button>
         <DisplayMenu />
       </>} />
       {isEditing ? (
@@ -152,96 +171,82 @@ export function ScoreScreen({ goLibrary }: { goLibrary?: () => void }) {
 
 const MODES: ListenMode[] = ['tutti', 'solo', 'without']
 
-/** Chorale: pick "je chante", how to listen, per-voice presence. */
-/** The choir controls on their own: the Chorale tab on phones, the right column on desktop. */
+/**
+ * Chorale panel, organised by task (proposal A):
+ *  - Ma partie: which voice I sing, how I listen, the sound of my voice
+ *  - Le chœur: the choir's sound, its effects, recording real voices
+ * Tempo / tonique / per-voice mute live in the centre on desktop (no duplicates).
+ */
 export function ChoirPanel() {
   const { myVoice, mode, mySound, set } = usePrefs()
   const { muted, solo, toggleMute } = usePlayer()
-  const card: CSSProperties = { background: 'var(--bg2)', borderRadius: 16, padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }
-  const label: CSSProperties = { fontSize: 12, fontWeight: 700, color: 'var(--text2)', letterSpacing: '.06em' }
+  const desktop = useDesktop()
   return (
-      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '4px 12px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <span style={{ ...label, padding: '0 4px' }}>JE CHANTE</span>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 8 }}>
-            {VOICES.map(v => (
-              <button key={v} type="button" aria-pressed={myVoice === v} onClick={() => set('myVoice', v)} style={{
-                height: 64, borderRadius: 14, border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2,
-                background: myVoice === v ? COLOR[v] : 'var(--bg2)', color: myVoice === v ? '#fff' : 'var(--text2)',
-              }}>
-                <span style={{ fontSize: 20, fontWeight: 800, color: myVoice === v ? '#fff' : COLOR[v] }}>{v}</span>
-                <span style={{ fontSize: 11 }}>{NAME[v]}</span>
-              </button>
-            ))}
+    <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '14px 12px 20px', display: 'flex', flexDirection: 'column', gap: 24 }}>
+      <section aria-label="Ma partie">
+        <div className="ios-caption">Ma partie</div>
+        <div className="ios-group">
+          <div className="ios-row stack">
+            <span>Je chante</span>
+            <div role="radiogroup" aria-label="Je chante" className="ios-seg">
+              {VOICES.map(v => (
+                <button key={v} type="button" role="radio" aria-checked={myVoice === v} onClick={() => set('myVoice', v)}
+                  style={{ color: myVoice === v ? COLOR[v] : undefined }}>{NAME[v]}</button>
+              ))}
+            </div>
           </div>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <span style={{ ...label, padding: '0 4px' }}>ÉCOUTE</span>
-          <div style={{ ...card, padding: '2px 14px' }}>
-            {MODES.map((m, i) => (
-              <label key={m} style={{ display: 'flex', alignItems: 'center', gap: 12, minHeight: 48, borderTop: i ? '1px solid var(--border)' : undefined }}>
-                <input type="radio" name="mode" checked={mode === m} onChange={() => set('mode', m)} style={{ width: 20, height: 20, accentColor: 'var(--ink)' }} />
-                <span style={{ fontSize: 15, fontWeight: 600 }}>{MODE_LABEL[m]}</span>
-              </label>
-            ))}
+          <div className="ios-row stack">
+            <span>Écoute</span>
+            <div role="radiogroup" aria-label="Écoute" className="ios-seg">
+              {MODES.map(m => (
+                <button key={m} type="button" role="radio" aria-checked={mode === m} onClick={() => set('mode', m)}>
+                  {m === 'without' ? 'Sans moi' : m === 'solo' ? 'Ma voix' : MODE_LABEL[m]}
+                </button>
+              ))}
+            </div>
           </div>
+          {desktop
+            ? <Combo row label="Son de ma voix" value={mySound} onPick={v => set('mySound', v as MySound)} options={SOUNDS.map(o => ({ value: o.value, label: o.label }))} />
+            : <label className="ios-row">
+                <span style={{ flex: 'none' }}>Son de ma voix</span>
+                <select value={mySound} onChange={e => set('mySound', e.target.value as MySound)} style={{ flex: 1 }}>
+                  {SOUNDS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </label>}
         </div>
+      </section>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <span style={{ ...label, padding: '0 4px' }}>SON DE MA VOIX</span>
-          <div style={{ ...card, padding: '2px 14px' }}>
-            {SOUNDS.map((o, i) => (
-              <label key={o.value} style={{ display: 'flex', alignItems: 'center', gap: 12, minHeight: 48, borderTop: i ? '1px solid var(--border)' : undefined }}>
-                <input type="radio" name="sound" checked={mySound === o.value} onChange={() => set('mySound', o.value)} style={{ width: 20, height: 20, accentColor: 'var(--ink)' }} />
-                <span style={{ fontSize: 15, fontWeight: 600 }}>{o.label}</span>
-              </label>
-            ))}
-            {['Solfège chanté (do, ré, mi…)', 'Voix de synthèse (paroles)'].map(l => (
-              <label key={l} style={{ display: 'flex', alignItems: 'center', gap: 12, minHeight: 48, borderTop: '1px solid var(--border)', opacity: 0.45 }}>
-                <input type="radio" disabled style={{ width: 20, height: 20 }} />
-                <span style={{ fontSize: 15, fontWeight: 600, flex: 1 }}>{l}</span>
-                <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent-ink)' }}>BIENTÔT</span>
-              </label>
-            ))}
-          </div>
-        </div>
+      <section aria-label="Le chœur">
+        <div className="ios-caption">Le chœur</div>
+        {desktop
+          ? <div className="ios-group"><SoundCombo row /><SoundPicker /></div>
+          : <SoundPicker />}
+      </section>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <span style={{ ...label, padding: '0 4px' }}>PUPITRES</span>
-          <div style={{ ...card, gap: 4 }}>
+      {!desktop && (
+        <section aria-label="Pupitres">
+          <div className="ios-caption">Pupitres actifs</div>
+          <div className="ios-seg">
             {VOICES.map(v => {
               const on = solo.size ? solo.has(v) : !muted[v]
-              return (
-                <button key={v} type="button" aria-pressed={on} onClick={() => toggleMute(v)} style={{
-                  display: 'flex', alignItems: 'center', gap: 12, height: 44, border: 'none', background: 'transparent', color: 'var(--text)', textAlign: 'left',
-                }}>
-                  <span style={{ width: 18, fontWeight: 800, color: COLOR[v] }}>{v}</span>
-                  <span style={{ flex: 1, height: 6, borderRadius: 3, background: 'var(--bg4)', position: 'relative' }}>
-                    <span style={{ position: 'absolute', inset: '0 auto 0 0', width: on ? '100%' : '0%', borderRadius: 3, background: COLOR[v], transition: 'width .15s' }} />
-                  </span>
-                  <span style={{ width: 56, textAlign: 'right', fontSize: 12, color: 'var(--text2)' }}>{on ? 'joue' : 'muet'}</span>
-                </button>
-              )
+              return <button key={v} type="button" aria-pressed={on} onClick={() => toggleMute(v)} style={{ color: on ? COLOR[v] : 'var(--text3)' }}>{NAME[v]}</button>
             })}
           </div>
-        </div>
+        </section>
+      )}
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <span style={{ ...label, padding: '0 4px' }}>RÉGLAGES</span>
-          <SettingsChips />
-        </div>
-      </div>
+      {!desktop && <SettingsChips />}
+    </div>
   )
 }
 
-export function ChoirView({ goLibrary }: { goLibrary?: () => void }) {
+export function ChoirView({ goLibrary, back }: { goLibrary?: () => void; back?: Back }) {
   const { score, title } = useMeta()
   const { myVoice } = usePrefs()
-  if (!score) return <><Header title="Chorale" /><NoScore go={goLibrary} /></>
+  if (!score) return <><Header title="Chorale" back={back} /><NoScore go={goLibrary} /></>
   return (
     <>
-      <Header title="Répétition" sub={`${title} · ${NAME[myVoice]}`} />
+      <Header title="Répétition" sub={`${title} · ${NAME[myVoice]}`} back={back} />
       <ChoirPanel />
       <div style={{ flex: 'none', padding: '8px 16px 10px', background: 'var(--bg2)', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 8 }}>
         <Progress /><Transport />

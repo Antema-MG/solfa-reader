@@ -1,114 +1,106 @@
 import { useState, type CSSProperties } from 'react'
+import { Icon } from './Icon'
 import type { Voice } from '../../types'
 import { usePlayer } from '../../state/PlayerContext'
 import { useEditor } from '../../state/EditorContext'
 import { usePrefs, type FontSize, type ListenMode } from '../../state/PrefsContext'
 import { TONICS } from '../../domain/pitch'
-import { INSTRUMENT_BY_ID, variantFromTimbre, type InstrumentId } from '../../types/music'
+import { variantFromTimbre } from '../../types/music'
 import PhraseList from '../Score/PhraseList'
 import Keyboard from '../Keyboard/Keyboard'
 import EditorGrid from '../Editor/EditorGrid'
 import RhythmToolbar from '../Editor/RhythmToolbar'
-import { MODE_LABEL } from './ui'
+import { MODE_LABEL, SoundPicker, useSoundLabel } from './ui'
 
 const VOICES: Voice[] = ['S', 'A', 'T', 'B']
 const COLOR: Record<Voice, string> = { S: 'var(--s)', A: 'var(--a)', T: 'var(--t)', B: 'var(--b)' }
 const NAME: Record<Voice, string> = { S: 'Soprano', A: 'Alto', T: 'Ténor', B: 'Basse' }
-const INSTRUMENTS: InstrumentId[] = ['church_organ', 'acoustic_grand_piano', 'choir_aahs', 'string_ensemble_1', 'flute', 'trumpet']
 const MODES: ListenMode[] = ['tutti', 'solo', 'without']
-
-const sel: CSSProperties = {
-  height: 40, minWidth: 0, width: '100%', borderRadius: 10, border: '1px solid var(--border2)', background: 'var(--bg3)',
-  color: 'var(--text)', fontSize: 14, padding: '0 8px',
-}
-const step: CSSProperties = { width: 40, height: 40, border: 'none', borderRadius: 10, background: 'var(--bg3)', fontSize: 20, color: 'var(--text)' }
-const lab: CSSProperties = { fontSize: 11, fontWeight: 700, color: 'var(--text2)', letterSpacing: '.06em' }
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return <label style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}><span style={lab}>{label}</span>{children}</label>
-}
 
 function Switch({ on, flip, label }: { on: boolean; flip: () => void; label: string }) {
   return (
     <button type="button" role="switch" aria-checked={on} aria-label={label} onClick={flip} style={{
-      position: 'relative', width: 50, height: 30, borderRadius: 15, border: 'none', padding: 0, background: on ? 'var(--green)' : 'var(--border2)', flex: 'none',
-    }}><span style={{ position: 'absolute', top: 2, left: on ? 22 : 2, width: 26, height: 26, borderRadius: 13, background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,.25)', transition: 'left .15s' }} /></button>
+      position: 'relative', width: 51, height: 31, borderRadius: 16, border: 'none', padding: 0, background: on ? '#34c759' : 'var(--fill)', flex: 'none', transition: 'background .2s',
+    }}><span style={{ position: 'absolute', top: 2, left: on ? 22 : 2, width: 27, height: 27, borderRadius: 14, background: '#fff', boxShadow: '0 3px 8px rgba(0,0,0,.15), 0 1px 1px rgba(0,0,0,.16)', transition: 'left .2s' }} /></button>
   )
 }
 
-/** Everything adjustable, in one popover: tempo, tonic, instrument, effect, zoom, text, lyrics, piano. */
+function Stepper({ dec, inc, labels }: { dec: () => void; inc: () => void; labels: [string, string] }) {
+  return (
+    <span className="ios-stepper">
+      <button type="button" aria-label={labels[0]} onClick={dec}>−</button><i /><button type="button" aria-label={labels[1]} onClick={inc}>+</button>
+    </span>
+  )
+}
+
+/** Everything adjustable, in one popover, laid out like iOS Settings. */
 function SettingsPopover({ onClose, withPiano }: { onClose: () => void; withPiano: boolean }) {
-  const { tempo, tonic, instrumentId, setTempo, setTonic, setInstrument, solo, toggleSolo, score } = usePlayer()
-  const { mode, zoom, fontSize, lyrics, pianoL, set } = usePrefs()
+  const { tempo, tonic, setTempo, setTonic, solo, toggleSolo, score } = usePlayer()
+  const { mode, myVoice, zoom, fontSize, lyrics, pianoL, set } = usePrefs()
   const nudge = (d: number) => setTempo(Math.min(240, Math.max(30, tempo + d)))
   const zoomBy = (d: number) => set('zoom', Math.min(160, Math.max(60, zoom + d)))
-  const inst = INSTRUMENTS.includes(instrumentId) ? INSTRUMENTS : [instrumentId, ...INSTRUMENTS]
   return (
-    <div role="dialog" aria-label="Réglages" style={{
-      position: 'absolute', right: 8, top: 52, width: 540, maxWidth: 'calc(100% - 16px)', maxHeight: 'calc(100dvh - 64px)', overflowY: 'auto', zIndex: 40,
-      background: 'var(--bg2)', borderRadius: 16, boxShadow: '0 12px 40px rgba(0,0,0,.22), 0 0 0 1px var(--border)', padding: '10px 14px 14px',
+    <div role="dialog" aria-label="Son et voix" style={{
+      position: 'absolute', right: 8, top: 52, width: 860, maxWidth: 'calc(100% - 16px)', maxHeight: 'calc(100dvh - 64px)', overflowY: 'auto', zIndex: 40,
+      background: 'var(--bg3)', borderRadius: 14, boxShadow: '0 12px 40px rgba(0,0,0,.2), 0 0 0 0.5px var(--border2)', padding: '10px 14px 16px',
       display: 'flex', flexDirection: 'column', gap: 12,
     }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <b style={{ fontSize: 14 }}>Réglages</b>
-        <button type="button" aria-label="Fermer" onClick={onClose} style={{ width: 36, height: 36, borderRadius: 18, border: 'none', background: 'var(--bg3)', color: 'var(--text)' }}>✕</button>
+        <span style={{ fontSize: 15, fontWeight: 600, paddingLeft: 4 }}>Son et voix</span>
+        <button type="button" aria-label="Fermer" onClick={onClose} style={{ width: 30, height: 30, borderRadius: 15, border: 'none', background: 'var(--fill)', color: 'var(--text2)', display: 'grid', placeItems: 'center' }}><Icon name="close" size={14} /></button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 10 }}>
-        <Field label="TEMPO">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <button type="button" aria-label="Plus lent" onClick={() => nudge(-5)} style={step}>−</button>
-            <span style={{ flex: 1, textAlign: 'center', fontWeight: 700, fontSize: 14 }}>{tempo}</span>
-            <button type="button" aria-label="Plus vite" onClick={() => nudge(5)} style={step}>+</button>
-          </div>
-        </Field>
-        <Field label="TONIQUE (do =)">
-          <select value={tonic} onChange={e => setTonic(e.target.value)} style={sel}>
-            {TONICS.map(([k, l]) => <option key={k} value={k}>{l}{k === score?.metadata.key ? ' · original' : ''}</option>)}
-          </select>
-        </Field>
-        <Field label="INSTRUMENT">
-          <select value={instrumentId} onChange={e => setInstrument(e.target.value as InstrumentId)} style={sel}>
-            {inst.map(id => <option key={id} value={id}>{INSTRUMENT_BY_ID[id]?.label ?? id}</option>)}
-          </select>
-        </Field>
-        <Field label="ÉCOUTE">
-          <select value={mode} onChange={e => set('mode', e.target.value as ListenMode)} style={sel}>
-            {MODES.map(m => <option key={m} value={m}>{MODE_LABEL[m]}</option>)}
-          </select>
-        </Field>
-        <Field label="ZOOM">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <button type="button" aria-label="Dézoomer" onClick={() => zoomBy(-10)} style={step}>−</button>
-            <span style={{ flex: 1, textAlign: 'center', fontWeight: 700, fontSize: 13 }}>{zoom} %</span>
-            <button type="button" aria-label="Zoomer" onClick={() => zoomBy(10)} style={step}>+</button>
-          </div>
-        </Field>
-        <Field label="TEXTE">
-          <div style={{ display: 'flex', padding: 2, borderRadius: 12, background: 'var(--bg3)', height: 40, boxSizing: 'border-box' }}>
-            {([0, 1, 2] as FontSize[]).map(i => (
-              <button key={i} type="button" aria-pressed={fontSize === i} aria-label={['Petit', 'Moyen', 'Grand'][i]} onClick={() => set('fontSize', i)} style={{
-                flex: 1, border: 'none', borderRadius: 10, fontWeight: 700, fontSize: [12, 15, 18][i],
-                background: fontSize === i ? 'var(--ink)' : 'transparent', color: fontSize === i ? 'var(--on-ink)' : 'var(--text)',
-              }}>A</button>
-            ))}
-          </div>
-        </Field>
-      </div>
+      {/* Two columns side by side: landscape has width, not height. */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20, alignItems: 'start' }}>
+        <SoundPicker />
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', borderTop: '1px solid var(--border)', paddingTop: 10 }}>
-        <span style={{ ...lab }}>SOLO</span>
-        <div style={{ display: 'flex', gap: 6 }}>
-          {VOICES.map(v => (
-            <button key={v} type="button" aria-pressed={solo.has(v)} aria-label={`Solo ${NAME[v]}`} onClick={() => toggleSolo(v)} style={{
-              width: 40, height: 40, borderRadius: 10, border: '1px solid var(--border2)', fontSize: 13, fontWeight: 700,
-              background: solo.has(v) ? 'var(--ink)' : 'var(--bg3)', color: solo.has(v) ? 'var(--on-ink)' : 'var(--text2)',
-            }}>{v}</button>
-          ))}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+          <div>
+            <div className="ios-caption">Ma partie</div>
+            <div className="ios-group">
+              <div className="ios-row stack">
+                <span>Je chante</span>
+                <div role="radiogroup" aria-label="Je chante" className="ios-seg">
+                  {VOICES.map(v => <button key={v} type="button" role="radio" aria-checked={myVoice === v} onClick={() => set('myVoice', v)} style={{ color: myVoice === v ? COLOR[v] : undefined }}>{NAME[v]}</button>)}
+                </div>
+              </div>
+              <div className="ios-row stack">
+                <span>Écoute</span>
+                <div role="radiogroup" aria-label="Écoute" className="ios-seg">
+                  {MODES.map(m => <button key={m} type="button" role="radio" aria-checked={mode === m} onClick={() => set('mode', m)}>{MODE_LABEL[m]}</button>)}
+                </div>
+              </div>
+              <div className="ios-row stack">
+                <span>Solo</span>
+                <div className="ios-seg">
+                  {VOICES.map(v => <button key={v} type="button" aria-pressed={solo.has(v)} aria-label={`Solo ${NAME[v]}`} onClick={() => toggleSolo(v)}>{NAME[v]}</button>)}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div className="ios-caption">Lecture</div>
+            <div className="ios-group">
+              <div className="ios-row"><span style={{ flex: 1 }}>Tempo</span><span className="value">{tempo}</span>
+                <Stepper dec={() => nudge(-5)} inc={() => nudge(5)} labels={['Plus lent', 'Plus vite']} /></div>
+              <label className="ios-row"><span style={{ flex: 'none' }}>Tonique (do =)</span>
+                <select value={tonic} onChange={e => setTonic(e.target.value)} style={{ flex: 1 }}>
+                  {TONICS.map(([k, l]) => <option key={k} value={k}>{l}{k === score?.metadata.key ? ' · original' : ''}</option>)}
+                </select></label>
+              <div className="ios-row"><span style={{ flex: 1 }}>Zoom</span><span className="value">{zoom} %</span>
+                <Stepper dec={() => zoomBy(-10)} inc={() => zoomBy(10)} labels={['Dézoomer', 'Zoomer']} /></div>
+              <div className="ios-row"><span style={{ flex: 1 }}>Texte</span>
+                <div className="ios-seg" style={{ width: 132 }}>
+                  {([0, 1, 2] as FontSize[]).map(i => (
+                    <button key={i} type="button" aria-pressed={fontSize === i} aria-label={['Petit', 'Moyen', 'Grand'][i]} onClick={() => set('fontSize', i)} style={{ fontSize: [11, 14, 17][i] }}>A</button>
+                  ))}
+                </div></div>
+              <div className="ios-row"><span style={{ flex: 1 }}>Paroles</span><Switch on={lyrics} flip={() => set('lyrics', !lyrics)} label="Afficher les paroles" /></div>
+              {withPiano && <div className="ios-row"><span style={{ flex: 1 }}>Piano</span><Switch on={pianoL} flip={() => set('pianoL', !pianoL)} label="Afficher le piano" /></div>}
+            </div>
+          </div>
         </div>
-        <span style={{ flex: 1 }} />
-        <span style={{ fontSize: 13 }}>Paroles</span><Switch on={lyrics} flip={() => set('lyrics', !lyrics)} label="Afficher les paroles" />
-        {withPiano && <><span style={{ fontSize: 13 }}>Piano</span><Switch on={pianoL} flip={() => set('pianoL', !pianoL)} label="Afficher le piano" /></>}
       </div>
     </div>
   )
@@ -123,6 +115,7 @@ export function ScorePane({ withPiano }: { withPiano: boolean }) {
   const { myVoice, pianoL } = usePrefs()
   const { isEditing, enter, exit } = useEditor()
   const [open, setOpen] = useState(false)
+  const soundLabel = useSoundLabel()
   const m = score?.metadata
   const title = m?.title && m.title !== '-' ? m.title : 'Sans titre'
   const starts = score?.renderBlocks.map(b => b.measures[0].startBeat) ?? []
@@ -152,15 +145,19 @@ export function ScorePane({ withPiano }: { withPiano: boolean }) {
           })}
         </div>
         <span aria-hidden style={{ width: 1, height: 24, background: 'var(--border2)' }} />
-        <button type="button" aria-label="Phrase précédente" onClick={prev} style={icon}>⏮</button>
-        <button type="button" aria-label={isPlaying ? 'Pause' : 'Lecture'} disabled={instrumentLoading} onClick={isPlaying ? pause : play} style={{
-          width: 40, height: 40, borderRadius: 20, border: 'none', background: 'var(--ink)', color: 'var(--on-ink)', fontSize: 16, flex: 'none', opacity: instrumentLoading ? 0.4 : 1,
-        }}>{instrumentLoading ? '⋯' : isPlaying ? '⏸' : '▶'}</button>
-        <button type="button" aria-label="Phrase suivante" onClick={next} style={icon}>⏭</button>
-        {!withPiano && <button type="button" onClick={isEditing ? exit : enter} style={{ ...icon, width: 'auto', padding: '0 8px', fontSize: 12, fontWeight: 700, borderRadius: 20, background: isEditing ? 'var(--ink)' : 'var(--bg3)', color: isEditing ? 'var(--on-ink)' : 'var(--text)' }}>{isEditing ? '✓' : '✎'}</button>}
-        <button type="button" aria-label="Réglages" aria-expanded={open} onClick={() => setOpen(o => !o)} style={{
-          ...icon, borderRadius: 20, fontSize: 20, fontWeight: 800, background: open ? 'var(--ink)' : 'var(--bg3)', color: open ? 'var(--on-ink)' : 'var(--text)',
-        }}>⚙</button>
+        <button type="button" className="tp" aria-label="Phrase précédente" onClick={prev} style={{ width: 36, height: 36 }}><Icon name="rewind" size={20} /></button>
+        <button type="button" className="tp" aria-label={isPlaying ? 'Pause' : 'Lecture'} disabled={instrumentLoading} onClick={isPlaying ? pause : play}
+          style={{ width: 40, height: 40, opacity: instrumentLoading ? 0.35 : 1 }}><Icon name={instrumentLoading ? 'more' : isPlaying ? 'pause' : 'play'} size={26} /></button>
+        <button type="button" className="tp" aria-label="Phrase suivante" onClick={next} style={{ width: 36, height: 36 }}><Icon name="fastForward" size={20} /></button>
+        {!withPiano && <button type="button" aria-label={isEditing ? 'Terminer l’édition' : 'Éditer'} onClick={isEditing ? exit : enter} style={{ ...icon, width: 36, height: 36, borderRadius: 18, display: 'grid', placeItems: 'center', background: isEditing ? 'var(--bg4)' : 'var(--fill)', color: 'var(--text)' }}><Icon name={isEditing ? 'check' : 'pencil'} size={18} /></button>}
+        <button type="button" aria-label={`Son et voix : ${soundLabel}`} aria-expanded={open} onClick={() => setOpen(o => !o)} style={{
+          ...icon, width: 'auto', maxWidth: 200, height: 34, padding: '0 10px 0 12px', borderRadius: 17, display: 'inline-flex', alignItems: 'center', gap: 6,
+          fontSize: 13, fontWeight: 500, background: open ? 'var(--bg4)' : 'var(--fill)', color: 'var(--text)',
+        }}>
+          <Icon name="sliders" size={16} />
+          <span style={{ minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{soundLabel}</span>
+          <Icon name="chevronDown" size={12} style={{ color: 'var(--text2)', transform: open ? 'rotate(180deg)' : undefined, transition: 'transform .2s' }} />
+        </button>
       </header>
       <div onClick={e => { const r = e.currentTarget.getBoundingClientRect(); seekTo(((e.clientX - r.left) / r.width) * score.totalBeats) }}
         style={{ flex: 'none', height: 6, background: 'var(--bg4)', cursor: 'pointer', position: 'relative' }}>
