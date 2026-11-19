@@ -10,7 +10,7 @@ export interface TieElement  { kind: 'tie';  dur: number }
 export interface RestElement { kind: 'rest'; dur: number }
 export type Element = NoteElement | TieElement | RestElement
 
-export interface Beat    { elements: Element[]; raw: string }
+export interface Beat    { elements: Element[]; raw: string; lyric?: string }
 export interface Measure { index: number; startBeat: number; beats: Record<Voice, Beat[]> }
 export interface RenderBlock { comment: string | null; measures: Measure[] }
 
@@ -80,6 +80,7 @@ export interface MsolfaPlayerState {
   setTonic:      (key: string)  => void
   setTimbre:     (t: Timbre)    => void
   setInstrument: (id: InstrumentId) => void
+  setVoiceInstrument: (v: Voice, id: InstrumentId | null) => void
   toggleMute:    (v: Voice)     => void
   toggleSolo:    (v: Voice)     => void
   clearSelection: () => void

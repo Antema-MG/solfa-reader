@@ -15,7 +15,7 @@ export function useMsolfaPlayer(): MsolfaPlayerState {
   const { openFile, setTempo, setTonic }           = useScore(core)
   const { play, pause, stop, seekTo }              = useTransport(core)
   const { toggleMute, toggleSolo, clearSelection } = useMixer(core)
-  const { setTimbre, setInstrument }               = useInstrument(core)
+  const { setTimbre, setInstrument, setVoiceInstrument } = useInstrument(core)
 
   return {
     score: core.score, error: core.error, status: core.status,
@@ -25,7 +25,7 @@ export function useMsolfaPlayer(): MsolfaPlayerState {
     muted: core.muted, solo: core.solo,
     currentBeat: core.currentBeat, litMidis: core.litMidis,
     openFile, play, pause, stop, seekTo,
-    setTempo, setTonic, setTimbre, setInstrument,
+    setTempo, setTonic, setTimbre, setInstrument, setVoiceInstrument,
     toggleMute, toggleSolo, clearSelection,
   }
 }

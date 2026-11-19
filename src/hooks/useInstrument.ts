@@ -1,5 +1,5 @@
 import { useCallback, useEffect } from 'react'
-import type { Timbre } from '../types'
+import type { Timbre, Voice } from '../types'
 import type { InstrumentId } from '../types/music'
 import { INSTRUMENT_BY_ID, DEFAULT_INSTRUMENT } from '../types/music'
 import { loadInstrument } from '../services/soundfont'
@@ -50,8 +50,20 @@ export function useInstrument(core: PlayerCore) {
       })
   }, [engineRef, instrumentIdRef, instrumentLoadingRef, setInstrumentIdVal, setTimbreVal, setStatus, setLitMidis, setInstrumentLoading])
 
+  /** Give one voice its own sampled instrument (null = same as everyone). */
+  const setVoiceInstrument = useCallback((v: Voice, id: InstrumentId | null) => {
+    const engine = engineRef.current
+    if (!id) { engine.setVoiceSampler(v, null); return }
+    engine.ensure()
+    const ctx = engine.audioContext
+    if (!ctx) return
+    loadInstrument(ctx, id, engine.samplerDestination ?? undefined)
+      .then(player => engine.setVoiceSampler(v, player))
+      .catch(() => engine.setVoiceSampler(v, null))
+  }, [engineRef])
+
   // Preload the default instrument on mount so the first Play is ready to sound.
   useEffect(() => { setInstrument(DEFAULT_INSTRUMENT) }, [setInstrument])
 
-  return { setTimbre, setInstrument }
+  return { setTimbre, setInstrument, setVoiceInstrument }
 }

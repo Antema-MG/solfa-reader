@@ -68,6 +68,13 @@ function parseToken(tok: string, line: number, errors: ParseError[]): Element[] 
   return [{ kind: 'rest', dur: 1 }]
 }
 
+/** True when a single beat token (between ':') is valid .msolfa. Empty/'0'/'_' = rest. */
+export function isValidToken(tok: string): boolean {
+  const errs: ParseError[] = []
+  parseToken(tok, 0, errs)
+  return errs.length === 0
+}
+
 /** Count beats in first measure of a voice line (strips optional S./A./T./B. label). */
 function detectBeats(raw: string): number {
   const body  = raw.replace(/^[SATB]\.\s*/, '')
@@ -109,6 +116,29 @@ function buildEvents(measures: Measure[], num: number): NoteEvent[] {
   return events
 }
 
+/** "An- dria- ma-" / "Je-so-sy" → ['An','dria','ma'] / ['Je','so','sy']. One syllable per sung note. */
+export function splitSyllables(line: string): string[] {
+  return line.split(/\s+/).flatMap(w => w.split('-')).filter(Boolean)
+}
+
+/**
+ * Lyrics follow the soprano: each note onset (not ties, not rests) takes the
+ * next syllable. Extra syllables are dropped, missing ones leave the beat empty.
+ */
+function assignLyrics(measures: Measure[], line: string, num: number): void {
+  const syl = splitSyllables(line)
+  if (!syl.length) return
+  let k = 0
+  measures.forEach(m => {
+    for (let j = 0; j < num; j++) {
+      const beat = m.beats.S[j]
+      if (!beat) continue
+      const n = beat.elements.filter(e => e.kind === 'note').length
+      if (n) { beat.lyric = syl.slice(k, k + n).join('-'); k += n }
+    }
+  })
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function parseMsolfa(text: string): ParseResult {
@@ -117,7 +147,7 @@ export function parseMsolfa(text: string): ParseResult {
   const rawMeta: Record<string, string> = {}
   const metaKeys = ['Key', 'Mesure', 'Titre', 'Compositeur', 'Tempo']
 
-  type Item = { type: 'comment' | 'voice' | 'blank' | 'unknown'; raw: string; line: number }
+  type Item = { type: 'comment' | 'voice' | 'lyrics' | 'blank' | 'unknown'; raw: string; line: number }
   const items: Item[] = []
 
   lines.forEach((ln, i) => {
@@ -127,6 +157,7 @@ export function parseMsolfa(text: string): ParseResult {
     if (t.startsWith('//')) { items.push({ type: 'comment', raw: t, line: lineNo }); return }
     const mk = metaKeys.find(k => t.startsWith(k + ':'))
     if (mk) { rawMeta[mk] = t.slice(mk.length + 1).trim(); return }
+    if (/^W\./.test(t)) { items.push({ type: 'lyrics', raw: t.replace(/^W\.\s*/, ''), line: lineNo }); return }
     // Voice line: explicit label OR bare | line |
     if (/^[SATB]\.\s*\|/.test(t) || t.startsWith('|')) {
       items.push({ type: 'voice', raw: t, line: lineNo }); return
@@ -164,22 +195,25 @@ export function parseMsolfa(text: string): ParseResult {
 
   // ── Group voice lines into blocks ─────────────────────────
   // Separators: blank lines OR // comments
-  type Block = { comment: string | null; voiceLines: Item[] }
+  type Block = { comment: string | null; voiceLines: Item[]; lyrics: string }
   const blocks: Block[] = []
   let curComment: string | null = null
   let pending: Item[] = []
+  let pendingLyrics = ''
 
   const flush = () => {
-    if (!pending.length) return
-    blocks.push({ comment: curComment, voiceLines: [...pending] })
-    pending     = []
-    curComment  = null
+    if (!pending.length) { pendingLyrics = ''; return }
+    blocks.push({ comment: curComment, voiceLines: [...pending], lyrics: pendingLyrics })
+    pending       = []
+    pendingLyrics = ''
+    curComment    = null
   }
 
   items.forEach(it => {
     if      (it.type === 'blank')   { flush() }
     else if (it.type === 'comment') { flush(); curComment = it.raw }
     else if (it.type === 'voice')   { pending.push(it) }
+    else if (it.type === 'lyrics')  { pendingLyrics = (pendingLyrics + ' ' + it.raw).trim() }
   })
   flush()
 
@@ -255,6 +289,7 @@ export function parseMsolfa(text: string): ParseResult {
       blockMeasures.push(measure)
       globalMeasure++
     }
+    assignLyrics(blockMeasures, block.lyrics, num)
     renderBlocks.push({ comment: block.comment, measures: blockMeasures })
   })
 

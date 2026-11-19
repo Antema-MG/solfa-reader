@@ -39,6 +39,8 @@ export class AudioEngine {
   private samplerBus:  GainNode  | null = null
   private scheduled: OscillatorNode[] = []
   private sampler:   Player      | null = null
+  /** Optional own instrument for one voice (e.g. "ma voix" as a choir). Falls back to `sampler`. */
+  private voiceSamplers: Partial<Record<string, Player>> = {}
   timbre: Timbre = 'organ'
 
   ensure() {
@@ -70,6 +72,7 @@ export class AudioEngine {
 
   /** Swap the active sampled instrument (null → fall back to the synth). */
   setSampler(p: Player | null) { this.sampler = p }
+  setVoiceSampler(v: string, p: Player | null) { if (p) this.voiceSamplers[v] = p; else delete this.voiceSamplers[v] }
 
   resume()  { void this.ctx?.resume() }
   suspend() { void this.ctx?.suspend() }
@@ -85,13 +88,14 @@ export class AudioEngine {
     this.scheduled.forEach(n => { try { n.stop() } catch (_) {} })
     this.scheduled = []
     try { this.sampler?.stop() } catch (_) {}
+    Object.values(this.voiceSamplers).forEach(s => { try { s?.stop() } catch (_) {} })
   }
 
   /** Schedule a voice note (sampled if a sampler is loaded, else synth). */
   scheduleNote(voice: string, midi: number, startTime: number, durSec: number) {
     const sink = this.vGain[voice]
     if (!sink) return
-    this.emit(sink, midi, startTime, durSec)
+    this.emit(sink, midi, startTime, durSec, voice)
   }
 
   /** Play a single note immediately, routed past the voice gains (key preview). */
@@ -101,12 +105,13 @@ export class AudioEngine {
     this.emit(this.previewGain, midi, this.currentTime + 0.02, durSec)
   }
 
-  private emit(dest: AudioNode, midi: number, startTime: number, durSec: number) {
+  private emit(dest: AudioNode, midi: number, startTime: number, durSec: number, voice?: string) {
     if (!this.ctx) return
-    if (this.sampler) {
+    const sp = (voice && this.voiceSamplers[voice]) || this.sampler
+    if (sp) {
       // The player is already wired to the sampler bus at load time; sample-player
       // ignores a per-note destination, so we don't pass `dest` here.
-      (this.sampler.play as unknown as SfPlay)(midi, startTime, { gain: 1, duration: durSec })
+      (sp.play as unknown as SfPlay)(midi, startTime, { gain: 1, duration: durSec })
       return
     }
     const freq = midiToFreq(midi)
