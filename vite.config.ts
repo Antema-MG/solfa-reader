@@ -3,6 +3,8 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
+  // ngrok tunnels for testing on a phone (leading dot = any subdomain, survives new tunnel URLs).
+  server: { allowedHosts: ['.ngrok-free.dev', '.ngrok-free.app'] },
   plugins: [
     react(),
     VitePWA({

@@ -18,7 +18,7 @@ export function centsOff(freq: number, midi: number): number {
 }
 
 /** Autocorrelation pitch estimate. Returns frequency in Hz, or -1 if unvoiced. */
-function autoCorrelate(buf: Float32Array, sampleRate: number): number {
+export function autoCorrelate(buf: Float32Array, sampleRate: number): number {
   const SIZE = buf.length
   let rms = 0
   for (let i = 0; i < SIZE; i++) rms += buf[i] * buf[i]

@@ -1,6 +1,9 @@
-import type { Timbre } from '../types'
+import type { Timbre, Voice } from '../types'
 import type { Player } from './soundfont'
 import { midiToFreq } from '../domain/pitch'
+import { ChoirSynth, type ChoirFx } from './choirSynth'
+import type { Takes } from './recordedChoir'
+import { syllableFor, type SungStyle } from '../domain/choir'
 
 /** Per-note play options actually supported by soundfont-player (destination is
  *  honoured at runtime but missing from its typings). */
@@ -41,11 +44,19 @@ export class AudioEngine {
   private sampler:   Player      | null = null
   /** Optional own instrument for one voice (e.g. "ma voix" as a choir). Falls back to `sampler`. */
   private voiceSamplers: Partial<Record<string, Player>> = {}
+  /** Realistic sung choir (formant synthesis): main sound and/or one voice's own sound. */
+  private choir: ChoirSynth | null = null
+  private sung: SungStyle | null = null
+  private voiceSung: Partial<Record<string, SungStyle>> = {}
+  private choirFx: ChoirFx = { singers: 3, reverb: 45 }
   timbre: Timbre = 'organ'
 
   ensure() {
     if (this.ctx) return
-    this.ctx   = new AudioContext()
+    // 'playback' = bigger output buffer: far fewer crackles/dropouts on phones and
+    // busy tabs; everything is scheduled ahead, so the extra latency is harmless.
+    this.ctx   = new AudioContext({ latencyHint: 'playback' })
+    this.keepAlive(this.ctx)
     this.master = this.ctx.createGain()
     this.master.gain.value = 0.5
     this.master.connect(this.ctx.destination)
@@ -65,17 +76,45 @@ export class AudioEngine {
     this.samplerBus.connect(this.master)
   }
 
+  /**
+   * The browser may suspend/interrupt the context on its own (iOS call or lock
+   * screen, Android background, tab switch). While we want sound, resume it as
+   * soon as the page is visible again or on the next touch (iOS needs a gesture).
+   */
+  private wantRunning = true
+  private keepAlive(ctx: AudioContext) {
+    const kick = () => { if (this.wantRunning && ctx.state !== 'running') void ctx.resume().catch(() => {}) }
+    ctx.addEventListener('statechange', kick)
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) kick() })
+    for (const e of ['pointerdown', 'touchend', 'keydown']) document.addEventListener(e, kick, { capture: true, passive: true })
+  }
+
+  /** Built on first sung use only (impulse response + noise cost CPU on phones). */
+  private get choirSynth(): ChoirSynth | null {
+    if (!this.choir && this.ctx) { this.choir = new ChoirSynth(this.ctx, this.master!); this.choir.setFx(this.choirFx); this.choir.setTakes(this.takes) }
+    return this.choir
+  }
+
   get currentTime() { return this.ctx?.currentTime ?? 0 }
   get audioContext(): AudioContext | null { return this.ctx }
   get samplerDestination(): AudioNode | null { return this.samplerBus }
   get hasSampler() { return !!this.sampler }
+  /** Something can sound: a loaded sampler or the sung choir. */
+  get ready() { return !!this.sampler || !!this.sung }
 
   /** Swap the active sampled instrument (null → fall back to the synth). */
   setSampler(p: Player | null) { this.sampler = p }
   setVoiceSampler(v: string, p: Player | null) { if (p) this.voiceSamplers[v] = p; else delete this.voiceSamplers[v] }
+  /** Sung choir as the main sound (null → back to the sampler). */
+  setSung(style: SungStyle | null) { this.sung = style }
+  setVoiceSung(v: string, style: SungStyle | null) { if (style) this.voiceSung[v] = style; else delete this.voiceSung[v] }
+  setChoirFx(fx: ChoirFx) { this.choirFx = fx; this.choir?.setFx(fx) }
+  private takes: Takes = {}
+  /** Real recorded syllables for the 'recorded' style. */
+  setTakes(takes: Takes) { this.takes = takes; this.choir?.setTakes(takes) }
 
-  resume()  { void this.ctx?.resume() }
-  suspend() { void this.ctx?.suspend() }
+  resume()  { this.wantRunning = true;  void this.ctx?.resume() }
+  suspend() { this.wantRunning = false; void this.ctx?.suspend() }
 
   applyVoiceGains(isAudible: (v: string) => boolean) {
     if (!this.ctx) return
@@ -89,12 +128,21 @@ export class AudioEngine {
     this.scheduled = []
     try { this.sampler?.stop() } catch (_) {}
     Object.values(this.voiceSamplers).forEach(s => { try { s?.stop() } catch (_) {} })
+    this.choir?.stopAll()
   }
 
   /** Schedule a voice note (sampled if a sampler is loaded, else synth). */
-  scheduleNote(voice: string, midi: number, startTime: number, durSec: number) {
+  scheduleNote(voice: string, midi: number, startTime: number, durSec: number, degree = 'd') {
     const sink = this.vGain[voice]
     if (!sink) return
+    // Per-voice sound wins over the main one; a voice sampler overrides a main sung choir.
+    const style = this.voiceSung[voice] ?? (this.voiceSamplers[voice] ? null : this.sung)
+    const choir = style && this.choirSynth
+    if (style && choir) {
+      if (style === 'recorded' && choir.singRecorded(voice as Voice, midi, degree, startTime, durSec)) return
+      choir.sing(voice as Voice, midiToFreq(midi), syllableFor(style, degree), startTime, durSec)
+      return
+    }
     this.emit(sink, midi, startTime, durSec, voice)
   }
 

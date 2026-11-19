@@ -1,10 +1,11 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import type { Voice } from '../types'
+import type { SungStyle } from '../domain/choir'
 
 export type FontSize = 0 | 1 | 2
 export type ListenMode = 'solo' | 'front' | 'without' | 'tutti'
 /** 'same' = like the other voices; else a General MIDI program name. */
-export type MySound = 'same' | 'acoustic_grand_piano' | 'choir_aahs' | 'voice_oohs' | 'synth_choir'
+export type MySound = 'same' | 'acoustic_grand_piano' | 'choir_aahs' | 'voice_oohs' | 'synth_choir' | SungStyle
 
 /** Display + choir preferences shared by Écoute / Partition / Chorale. Persisted locally. */
 export interface Prefs {
@@ -12,14 +13,19 @@ export interface Prefs {
   zoom: number                      // 60..160 %
   fontSize: FontSize
   lyrics: boolean
-  piano: boolean
+  piano: boolean                    // piano on desktop web (shown by default)
+  pianoM: boolean                   // piano on phone portrait (hidden by default: the score needs the room)
   pianoL: boolean                   // piano in phone landscape (off by default: the score needs the room)
   mode: ListenMode
   mySound: MySound                  // instrument used for my voice only
+  singers: number                   // sung choir: singers per section (1..6)
+  reverb: number                    // sung choir: church reverb 0..100
+  panel: boolean                    // desktop: Chorale options column shown (Ctrl+B)
+  library: boolean                  // desktop: library column shown (Ctrl+Alt+B)
 }
 
 const DEFAULTS: Prefs = {
-  myVoice: 'A', zoom: 100, fontSize: 1, lyrics: true, piano: true, pianoL: false, mode: 'tutti', mySound: 'same',
+  myVoice: 'A', zoom: 100, fontSize: 1, lyrics: true, piano: true, pianoM: false, pianoL: false, mode: 'tutti', mySound: 'same', singers: 3, reverb: 45, panel: true, library: true,
 }
 const KEY = 'msolfa.prefs.v1'
 

@@ -1,4 +1,7 @@
 import type { InstrumentId } from './types/music'
+import type { SungStyle } from './domain/choir'
+import type { ChoirFx } from './services/choirSynth'
+import type { Takes } from './services/recordedChoir'
 
 export type Voice   = 'S' | 'A' | 'T' | 'B'
 export type Status  = 'stopped' | 'playing' | 'paused'
@@ -66,6 +69,8 @@ export interface MsolfaPlayerState {
   timbre:      Timbre
   instrumentId:      InstrumentId
   instrumentLoading: boolean
+  /** Realistic sung choir replacing the instrument (null = instrument). */
+  sung:        SungStyle | null
   muted:       Record<Voice, boolean>
   solo:        Set<Voice>
   currentBeat: number
@@ -80,7 +85,10 @@ export interface MsolfaPlayerState {
   setTonic:      (key: string)  => void
   setTimbre:     (t: Timbre)    => void
   setInstrument: (id: InstrumentId) => void
-  setVoiceInstrument: (v: Voice, id: InstrumentId | null) => void
+  setVoiceInstrument: (v: Voice, id: InstrumentId | SungStyle | null) => void
+  setSung:       (style: SungStyle) => void
+  setChoirFx:    (fx: ChoirFx) => void
+  setTakes:      (takes: Takes) => void
   toggleMute:    (v: Voice)     => void
   toggleSolo:    (v: Voice)     => void
   clearSelection: () => void

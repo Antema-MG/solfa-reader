@@ -14,8 +14,8 @@ export function useTransport(core: PlayerCore) {
     if (!file) return
     const engine = engineRef.current
     engine.ensure()
-    // Sampler-only playback: wait until the instrument has finished loading.
-    if (!engine.hasSampler) return
+    // Wait until the instrument has finished loading (the sung choir needs no samples).
+    if (!engine.ready) return
     if (statusRef.current === 'paused') {
       engine.resume()
       statusRef.current = 'playing'; setStatus('playing')
@@ -23,6 +23,10 @@ export function useTransport(core: PlayerCore) {
     }
     let pos = currentBeatRef.current
     if (pos >= file.totalBeats) pos = 0
+    // A pickup is padded to a full measure (« || - : - : - : - : - : m | »): skip that
+    // silent lead-in, or the first seconds sound like nothing is playing.
+    const first = file.events.reduce((m, e) => Math.min(m, e.start), Infinity)
+    if (pos < first && first < file.totalBeats) pos = first
     if (loopStartRef.current != null && (pos < loopStartRef.current || pos >= (loopEndRef.current ?? Infinity)))
       pos = loopStartRef.current
     engine.resume()

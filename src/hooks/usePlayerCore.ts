@@ -3,6 +3,7 @@ import type { Voice, Timbre, Status, Score, NoteEvent } from '../types'
 import type { InstrumentId } from '../types/music'
 import { INSTRUMENT_BY_ID, DEFAULT_INSTRUMENT } from '../types/music'
 import { AudioEngine } from '../services/audioEngine'
+import type { SungStyle } from '../domain/choir'
 import { degreeToMidi, VOICE_BASE_OCTAVE, computePianoMidis, NoteSpec } from '../domain/pitch'
 
 const VOICES: Voice[] = ['S', 'A', 'T', 'B']
@@ -40,6 +41,7 @@ export function usePlayerCore() {
   const [timbre,      setTimbreVal]  = useState<Timbre>(INSTRUMENT_BY_ID[DEFAULT_INSTRUMENT].fallback)
   const [instrumentId,      setInstrumentIdVal] = useState<InstrumentId>(DEFAULT_INSTRUMENT)
   const [instrumentLoading, setInstrumentLoading] = useState(false)
+  const [sung,        setSungVal]    = useState<SungStyle | null>(null)
   const [muted,       setMuted]      = useState<Record<Voice, boolean>>({ S:false, A:false, T:false, B:false })
   const [solo,        setSolo]       = useState<Set<Voice>>(new Set())
   const [currentBeat, setCurrentBeat] = useState(0)
@@ -123,7 +125,7 @@ export function usePlayerCore() {
       const allMidis = computePianoMidis(specsAtBeat(file.events, ev.start), tonicRef.current)
       const midi = allMidis[ev.voice]
         ?? degreeToMidi(ev.degree, ev.octave, ev.chromatic, tonicRef.current, VOICE_BASE_OCTAVE[ev.voice])
-      engine.scheduleNote(ev.voice, midi, base + (effStart - posBeats) * spb, durSec)
+      engine.scheduleNote(ev.voice, midi, base + (effStart - posBeats) * spb, durSec, ev.degree)
     })
   }, [secondsPerBeat, isAudible])
 
@@ -164,7 +166,7 @@ export function usePlayerCore() {
     // state
     score, setScore, error, setError, status, setStatus,
     tempo, setTempoVal, tonic, setTonicVal, timbre, setTimbreVal,
-    instrumentId, setInstrumentIdVal, instrumentLoading, setInstrumentLoading,
+    instrumentId, setInstrumentIdVal, instrumentLoading, setInstrumentLoading, sung, setSungVal,
     muted, setMuted, solo, setSolo, currentBeat, setCurrentBeat, litMidis, setLitMidis,
     // refs
     engineRef, scoreRef, statusRef, tempoRef, tonicRef, mutedRef, soloRef,

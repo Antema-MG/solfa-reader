@@ -30,8 +30,46 @@
   --t-bg: rgba(61,110,18,0.14);
   --b-bg: rgba(138,76,8,0.14);
   --mono: 'Consolas', 'Courier New', monospace;
-  --sans: 'Segoe UI', system-ui, sans-serif;
+  --sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif;
+  --fill: rgba(118,118,128,0.12);   /* iOS tertiary fill: segmented tracks, steppers */
 }
+
+/* ── Apple-style grouped lists and segmented controls ─────────
+   .ios-caption  grey section title above a group (sentence case)
+   .ios-group    white rounded group; .on-card when it sits on a white surface
+   .ios-row      44px row, separator inset from the left like iOS Settings
+   .ios-seg      segmented control: the selected item is a white pill      */
+.ios-caption { font-size: 13px; color: var(--text2); padding: 0 16px 6px; }
+.ios-group { background: var(--bg2); border-radius: 12px; }
+.ios-group.on-card { background: var(--bg3); }
+.ios-row {
+  display: flex; align-items: center; gap: 12px; min-height: 44px;
+  margin-left: 16px; padding: 7px 16px 7px 0; border-top: 0.5px solid var(--border2);
+  font-size: 15px; color: var(--text); position: relative;
+}
+.ios-row.stack { flex-direction: column; align-items: stretch; gap: 8px; padding-top: 10px; padding-bottom: 10px; }
+.ios-group > .ios-row:first-child { border-top: none; }
+button.ios-row { width: calc(100% - 16px); background: none; border-left: 0; border-right: 0; border-bottom: 0; text-align: left; font: inherit; font-size: 15px; }
+button.ios-row:first-child { border-top: none; }
+.ios-row .value { color: var(--text2); }
+.ios-row select { appearance: none; border: none; background: transparent; color: var(--text2); font: inherit; font-size: 15px; text-align: right; text-align-last: right; padding-right: 2px; min-width: 0; }
+.ios-seg { display: flex; padding: 2px; gap: 0; border-radius: 9px; background: var(--fill); }
+.ios-seg > button {
+  flex: 1; min-width: 0; height: 30px; border: none; border-radius: 7px; background: transparent;
+  font-size: 13px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 6px;
+  transition: background .2s, box-shadow .2s;
+}
+.ios-seg > button[aria-checked="true"], .ios-seg > button[aria-pressed="true"], .ios-seg > button[aria-selected="true"] {
+  background: var(--bg2); font-weight: 600; box-shadow: 0 3px 8px rgba(0,0,0,.12), 0 3px 1px rgba(0,0,0,.04);
+}
+/* Transport glyph buttons (Apple Music): no fill at rest, soft circle + slight shrink when pressed */
+.tp { display: grid; place-items: center; padding: 0; border: none; border-radius: 50%; background: transparent; color: var(--text); flex: none; transition: background .15s, transform .1s; }
+.tp:active:not(:disabled) { background: var(--fill); transform: scale(.9); }
+@media (hover: hover) { .tp:hover:not(:disabled) { background: var(--fill); } }
+.menu-item:hover:not(:disabled), .menu-item:focus-visible { background: var(--fill) !important; outline: none; }
+.ios-stepper { display: inline-flex; align-items: center; border-radius: 8px; background: var(--fill); }
+.ios-stepper > button { width: 44px; height: 30px; border: none; background: none; font-size: 18px; color: var(--text); }
+.ios-stepper > i { width: 1px; height: 16px; background: var(--border2); }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body, #root { height: 100%; }
@@ -41,6 +79,9 @@ body {
   font-family: var(--sans);
   font-size: 14px;
   overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.005em;
 }
 button { font-family: inherit; cursor: pointer; color: inherit; }
 button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
