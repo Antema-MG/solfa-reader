@@ -13,6 +13,7 @@ import LandscapeChoir from './components/Shell/LandscapeChoir'
 import { useLandscape, useWide } from './components/Shell/ui'
 import RecordChoir from './components/Choir/RecordChoir'
 import { LandscapePlayer } from './components/Shell/LandscapePlayer'
+import ReadSettings from './components/Shell/ReadSettings'
 import { ChoirPanel, ChoirView, ListenView, ScoreScreen, useMySound } from './components/Shell/Views'
 
 const DEGREE_KEYS = new Set(['d', 'r', 'm', 'f', 's', 'l', 't'])
@@ -156,11 +157,16 @@ function LandscapeRoot() {
   const lib = useLibrary()
   const [draft, setDraft] = useState<Draft | null>(null)
   const [recording, setRecording] = useState(false)
+  const { chromeL, set } = usePrefs()
   const active = view === 'editor' ? 'library' : view
+  // Reading the score (Écoute / Partition): rail, header and transport hidden by default, so only the score shows.
+  const reading = view === 'listen' || view === 'score'
+  const bare = reading && !chromeL
   return (
-    <div style={{ display: 'flex', height: '100dvh', background: 'var(--bg)' }}>
+    <div style={{ position: 'relative', display: 'flex', height: '100dvh', background: 'var(--bg)' }}>
       <GlobalBehaviours onOpened={() => setView('listen')} />
-      <nav aria-label="Navigation" style={{
+      {bare && <ReadSettings onShowAll={() => set('chromeL', true)} />}
+      {!bare && <nav aria-label="Navigation" style={{
         flex: 'none', width: 'calc(64px + env(safe-area-inset-left))', boxSizing: 'border-box', padding: '6px 0', paddingLeft: 'env(safe-area-inset-left)',
         display: 'flex', flexDirection: 'column', justifyContent: 'center', background: 'rgba(249,249,251,0.96)', borderRight: '1px solid #E5E5EA',
       }}>
@@ -172,7 +178,14 @@ function LandscapeRoot() {
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={t.icon} /></svg>{t.label}
           </button>
         ))}
-      </nav>
+        {reading && (
+          <button type="button" aria-label="Masquer les commandes" title="Masquer : partition seule" onClick={() => set('chromeL', false)} style={{
+            height: 48, border: 'none', background: 'transparent', color: '#6E6E73', fontSize: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2,
+          }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6" /></svg>Masquer
+          </button>
+        )}
+      </nav>}
       <main style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column', paddingRight: 'env(safe-area-inset-right)' }}>
         {view === 'library' && <CatalogView landscape onOpen={text => { openFile(text); setView('listen') }} onRead={text => { openFile(text); setView('score') }} onFix={d => { setDraft(d); setView('editor') }}
           onCreate={(text, id) => { openFile(text); editNew(id); setView('score') }} />}

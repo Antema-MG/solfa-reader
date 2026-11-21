@@ -18,6 +18,7 @@ export interface Prefs {
   piano: boolean                    // piano on desktop web (shown by default)
   pianoM: boolean                   // piano on phone portrait (shown by default, like the design)
   pianoL: boolean                   // piano in phone landscape (off by default: the score needs the room)
+  chromeL: boolean                  // phone landscape: nav rail, header and transport shown (off = score only)
   big: boolean                      // landscape: my voice drawn larger, the others smaller
   mySound: MySound                  // instrument used for my voice only
   singers: number                   // sung choir: singers per section (1..6)
@@ -27,7 +28,7 @@ export interface Prefs {
 }
 
 const DEFAULTS: Prefs = {
-  myVoice: 'A', voiceSrc: {}, noMine: false, shown: { S: true, A: true, T: true, B: true }, zoom: 100, fontSize: 1, lyrics: true, big: true, piano: true, pianoM: true, pianoL: false, mySound: 'same', singers: 3, reverb: 45, panel: true, library: true,
+  myVoice: 'A', voiceSrc: {}, noMine: false, shown: { S: true, A: true, T: true, B: true }, zoom: 100, fontSize: 1, lyrics: true, chromeL: false, big: true, piano: true, pianoM: true, pianoL: false, mySound: 'same', singers: 3, reverb: 45, panel: true, library: true,
 }
 const KEY = 'msolfa.prefs.v1'
 
