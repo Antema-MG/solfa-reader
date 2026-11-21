@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react'
 import type { EditModel, EditSelection } from '../types'
 import { scoreToEditModel } from '../domain/editModel'
 import { editModelToText } from '../domain/serialize'
-import { applyToCell, withCell, cellAt, nextSelection, type EditAction } from '../domain/editOps'
+import { applyToCell, withCell, cellAt, nextSelection, slotCount, splitBlock, mergeBlocks, type EditAction } from '../domain/editOps'
 import { usePlayer } from '../state/PlayerContext'
 
 export type { EditAction }
@@ -16,11 +16,17 @@ export interface EditorState {
   select: (sel: EditSelection) => void
   move: (dir: 'left' | 'right' | 'up' | 'down') => void
   apply: (action: EditAction) => void
+  /** Start a new phrase before measure `at` of phrase `block`. */
+  split: (block: number, at: number) => void
+  /** Join phrase `block` with the next. */
+  merge: (block: number) => void
   save: () => void
   /** Library item being edited (autosaved by the shell), or null for a read-only source. */
   docId: string | null
   /** Enter edit mode on the score being opened now, autosaving into library item `id`. */
   editNew: (id: string) => void
+  /** Autosave the score being edited into library item `id` (a copy is made for read-only sources). */
+  adopt: (id: string) => void
 }
 
 /**
@@ -51,6 +57,7 @@ export function useEditorState(): EditorState {
   }, [score])
 
   const editNew = useCallback((id: string) => { setDoc({ id, text: null }); setPending(true) }, [])
+  const adopt = useCallback((id: string) => setDoc({ id, text: model ? editModelToText(model) : null }), [model])
   // The new score reaches `score` on the next render: enter edit mode then.
   useEffect(() => { if (pending && score) { setPending(false); enter() } }, [pending, score, enter])
 
@@ -62,6 +69,14 @@ export function useEditorState(): EditorState {
     setSelection(sel => (model && sel) ? nextSelection(model, sel, dir) : sel)
   }, [model])
 
+  /** New model → state, autosave text and live preview (keeps mute/solo/tempo). */
+  const commit = useCallback((next: EditModel) => {
+    setModel(next)
+    const text = editModelToText(next)
+    setDoc(d => d && { ...d, text })
+    openFile(text, true)
+  }, [openFile])
+
   const apply = useCallback((action: EditAction) => {
     if (!model || !selection) return
     const ln = lastNote.current
@@ -71,21 +86,30 @@ export function useEditorState(): EditorState {
     const cell = cellAt(model, target)
     if (!cell) return
     const next = withCell(model, target, applyToCell(cell, target.slot, action))
-    if (action.type === 'rhythm' && action.value === 'pair' && selection.slot == null)
-      setSelection({ ...selection, slot: 'a' })
-    if (action.type === 'rhythm' && action.value !== 'pair' && selection.slot != null)
-      setSelection({ ...selection, slot: null })
+    if (action.type === 'rhythm' || action.type === 'setToken') {
+      const slots = slotCount(cellAt(next, selection))
+      setSelection({ ...selection, slot: slots > 1 ? Math.min(selection.slot ?? 0, slots - 1) : null })
+    }
     // Typing a note moves on to the next cell, so a line is filled without aiming at each cell.
     if (action.type === 'degree') {
       const landed = nextSelection(next, selection, 'right')
       lastNote.current = { typed: selection, landed }
       setSelection(landed)
     }
-    setModel(next)
-    const text = editModelToText(next)
-    setDoc(d => d && { ...d, text })
-    openFile(text) // live preview: re-parse into the player
-  }, [model, selection, openFile])
+    commit(next)
+  }, [model, selection, commit])
+
+  // "À la ligne": start a new phrase before a measure / join a phrase with the next.
+  const split = useCallback((block: number, at: number) => {
+    if (!model) return
+    const r = splitBlock(model, selection, block, at)
+    setSelection(r.sel); commit(r.model)
+  }, [model, selection, commit])
+  const merge = useCallback((block: number) => {
+    if (!model) return
+    const r = mergeBlocks(model, selection, block)
+    setSelection(r.sel); commit(r.model)
+  }, [model, selection, commit])
 
   const save = useCallback(() => {
     if (!model) return
@@ -98,5 +122,5 @@ export function useEditorState(): EditorState {
     URL.revokeObjectURL(url)
   }, [model])
 
-  return { isEditing, model, selection, enter, exit, select, move, apply, save, docId: doc?.id ?? null, editNew }
+  return { isEditing, model, selection, enter, exit, select, move, apply, split, merge, save, docId: doc?.id ?? null, editNew, adopt }
 }

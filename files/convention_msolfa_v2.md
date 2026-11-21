@@ -278,6 +278,11 @@ Chaque **position entre deux `:` ** vaut **1 temps** :
 | `.r` | 1 temps | Silence 0.5 + Ré 0.5 |
 | `-.s` | 1 temps | Prolongation 0.5 + note de passage 0.5 |
 | `-.` | 1 temps | Prolongation 0.5 + silence 0.5 |
+| `m.r.d` | 1 temps | **Trois croches** égales (⅓ de temps chacune) |
+| `m.r.d.s` | 1 temps | **Quatre croches** égales (¼ de temps chacune) |
+| `m.r.d.` | 1 temps | Trois croches, `.` final = grave sur la dernière (`m.r.d,`) |
+
+> Avec 3 ou 4 croches, chaque case est une note, `-` (tenue) ou `0` (silence) : `m.0.d`, `m.-.s.f`. Avec 2 croches la règle reste celle de `A.B`, `.B`, `-.B`.
 
 > `0` = `_` = *(rien)* → tous les trois signifient **silence**.
 

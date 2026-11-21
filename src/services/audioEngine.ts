@@ -123,7 +123,30 @@ export class AudioEngine {
       this.vGain[v]?.gain.setTargetAtTime(isAudible(v) ? 1 : 0, now, 0.005)
   }
 
+  /**
+   * Notes are built just in time (≈1.5 s ahead), never the whole score at once:
+   * a long piece (Katsaho Aloha: 584 notes) scheduled up front means thousands of
+   * audio nodes created in one go, which chokes the audio thread on phones and
+   * leaves the app silent and frozen. Same queue idea as ChoirSynth.
+   */
+  private pending: { t: number; end: number; run: () => void }[] = []
+  private pumpTimer = 0
+  private queueNote(t: number, end: number, run: () => void) {
+    this.pending.push({ t, end, run })
+    if (!this.pumpTimer) this.pumpTimer = window.setInterval(this.pump, 100)
+  }
+  private pump = () => {
+    if (!this.ctx) return
+    const now = this.ctx.currentTime, lim = now + 1.5   // > 1 s: background tabs throttle timers to 1 s
+    const due = this.pending.filter(p => p.t <= lim)
+    if (due.length) this.pending = this.pending.filter(p => p.t > lim)
+    due.forEach(p => { if (p.end > now + 0.02) p.run() })   // a late timer never replays stale notes
+    if (!this.pending.length) { clearInterval(this.pumpTimer); this.pumpTimer = 0 }
+  }
+
   stopAll() {
+    this.pending = []
+    clearInterval(this.pumpTimer); this.pumpTimer = 0
     this.scheduled.forEach(n => { try { n.stop() } catch (_) {} })
     this.scheduled = []
     try { this.sampler?.stop() } catch (_) {}
@@ -143,7 +166,24 @@ export class AudioEngine {
       choir.sing(voice as Voice, midiToFreq(midi), syllableFor(style, degree), startTime, durSec)
       return
     }
-    this.emit(sink, midi, startTime, durSec, voice)
+    const end = startTime + durSec
+    this.queueNote(startTime, end, () => {
+      const at = Math.max(startTime, this.currentTime)   // timer ran late: enter mid-note, keep the end
+      this.emit(sink, midi, at, end - at, voice)
+    })
+    this.pump()   // notes due right away (the first beats) start without waiting for the timer
+  }
+
+  /**
+   * "Clés": each voice sings its first note one after the other (S, A, T, B), then all
+   * four together. Goes through scheduleNote, so every voice keeps its own sound.
+   */
+  playClefs(notes: { voice: string; midi: number; degree: string }[], gap = 0.8, chord = 1.6) {
+    this.ensure(); this.resume()
+    const t0 = this.currentTime + 0.05
+    notes.forEach((n, i) => this.scheduleNote(n.voice, n.midi, t0 + i * gap, gap * 0.92, n.degree))
+    const tc = t0 + notes.length * gap + 0.1
+    notes.forEach(n => this.scheduleNote(n.voice, n.midi, tc, chord, n.degree))
   }
 
   /** Play a single note immediately, routed past the voice gains (key preview). */
@@ -203,6 +243,7 @@ export class AudioEngine {
       osc.start(startTime)
       osc.stop(noteEnd + cfg.r + 0.05)
       this.scheduled.push(osc)
+      osc.onended = () => { this.scheduled = this.scheduled.filter(n => n !== osc) }   // don't grow forever over a long piece
     })
   }
 }

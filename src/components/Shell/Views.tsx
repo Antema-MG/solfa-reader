@@ -3,42 +3,33 @@ import { Icon } from './Icon'
 import type { Voice } from '../../types'
 import { usePlayer } from '../../state/PlayerContext'
 import { useEditor } from '../../state/EditorContext'
-import { usePrefs, type ListenMode, type MySound } from '../../state/PrefsContext'
-import { variantFromTimbre, type InstrumentId } from '../../types/music'
+import { usePrefs, type MySound } from '../../state/PrefsContext'
+import type { InstrumentId } from '../../types/music'
 import PhraseList from '../Score/PhraseList'
-import Keyboard from '../Keyboard/Keyboard'
-import EditorGrid from '../Editor/EditorGrid'
 import RhythmToolbar from '../Editor/RhythmToolbar'
-import { Combo, DisplayMenu, usePiano, MODE_LABEL, SettingsChips, SoundCombo, SoundPicker, Transport, VoiceBar, pill, useDesktop, useWide } from './ui'
+import { Combo, DisplayMenu, SoundPicker, Transport, VoiceBar, pill, useDesktop } from './ui'
 import type { SungStyle } from '../../domain/choir'
 import { loadTakes } from '../../services/recordedChoir'
+import { DesktopListen, PhoneListen } from './Listen'
+import PartitionPhone from './PartitionPhone'
+import { VCOLOR } from './controls'
+import { SoundBar, VoiceMixBar } from './SoundBar'
+import { useVoiceMix } from '../../hooks/useVoiceMix'
+import { SUNG_STYLES } from '../../domain/choir'
+import { INSTRUMENT_BY_ID } from '../../types/music'
+import { INSTRUMENTS as INSTRUMENT_CHOICES, SHORT_SOUND } from './ui'
 
 const VOICES: Voice[] = ['S', 'A', 'T', 'B']
 const COLOR: Record<Voice, string> = { S: 'var(--s)', A: 'var(--a)', T: 'var(--t)', B: 'var(--b)' }
 const NAME: Record<Voice, string> = { S: 'Soprano', A: 'Alto', T: 'Ténor', B: 'Basse' }
 
-/** Translates "Effet de voix" + "je chante" into the player's mute/solo state. */
-export function useListenMode() {
-  const { mode, myVoice } = usePrefs()
-  const { muted, solo, toggleMute, toggleSolo, score } = usePlayer()
-  useEffect(() => {
-    const wantSolo = new Set<Voice>(mode === 'solo' ? [myVoice] : [])
-    const wantMuted = new Set<Voice>(mode === 'without' ? [myVoice] : [])
-    VOICES.forEach(v => {
-      if (solo.has(v) !== wantSolo.has(v)) toggleSolo(v)
-      if (!!muted[v] !== wantMuted.has(v)) toggleMute(v)
-    })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, myVoice, score])
-}
-
 /** Gives "ma voix" its own instrument (piano, choir...), the others keep the main one. */
 export function useMySound() {
-  const { mySound, myVoice, singers, reverb } = usePrefs()
+  const { mySound, myVoice, singers, reverb, voiceSrc } = usePrefs()
   const { setVoiceInstrument, setChoirFx } = usePlayer()
   useEffect(() => {
-    VOICES.forEach(v => setVoiceInstrument(v, v === myVoice && mySound !== 'same' ? (mySound as InstrumentId | SungStyle) : null))
-  }, [mySound, myVoice, setVoiceInstrument])
+    VOICES.forEach(v => setVoiceInstrument(v, (voiceSrc[v] ?? (v === myVoice && mySound !== 'same' ? mySound : null)) as InstrumentId | SungStyle | null))
+  }, [mySound, myVoice, voiceSrc, setVoiceInstrument])
   useEffect(() => { setChoirFx({ singers, reverb }) }, [singers, reverb, setChoirFx])
   const { setTakes } = usePlayer()
   useEffect(() => { void loadTakes().then(setTakes) }, [setTakes])
@@ -106,61 +97,41 @@ function Progress() {
       if (!score) return
       const r = e.currentTarget.getBoundingClientRect()
       seekTo(Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * score.totalBeats)
-    }} style={{ height: 14, display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-      <div style={{ flex: 1, height: 4, borderRadius: 2, background: 'var(--bg4)', position: 'relative' }}>
-        <div style={{ position: 'absolute', inset: '0 auto 0 0', width: `${pct}%`, borderRadius: 2, background: 'var(--ink)' }} />
+    }} style={{ height: 10, display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+      <div style={{ flex: 1, height: 2, borderRadius: 1, background: 'var(--bg4)', position: 'relative' }}>
+        <div style={{ position: 'absolute', inset: '0 auto 0 0', width: `${pct}%`, borderRadius: 1, background: 'var(--text2)' }} />
       </div>
     </div>
   )
 }
 
-/** Écoute: all phrases + quiet settings + optional compact piano + transport. */
+/** Écoute: phone portrait (chips + compact transport) or web (key/tempo pills, transport card, piano card). */
 export function ListenView({ goLibrary, back }: { goLibrary?: () => void; back?: Back }) {
-  const { score, error, title, sub } = useMeta()
-  const { timbre, litMidis, tonic, instrumentLoading } = usePlayer()
-  const [piano] = usePiano()
-  const wide = useWide()
-  if (!score) return <><Header title="Écoute" back={back} /><NoScore go={goLibrary} />{error && <p style={{ color: 'var(--red-btn)', padding: 16 }}>{error}</p>}</>
-  return (
-    <>
-      <Header title={title} sub={sub} back={back} right={<DisplayMenu withPiano />} />
-      <div style={{ flex: 'none', padding: '0 16px 8px' }}><VoiceBar /></div>
-      <PhraseList />
-      <section style={{ flex: 'none', padding: '10px 16px 12px', background: 'var(--bg2)', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <SettingsChips />
-        {piano && (
-          <div aria-label="Piano" style={{ overflowX: 'auto', borderRadius: 12, background: 'var(--bg3)', height: wide ? 124 : 86 }}>
-            {/* Compact: bare keybed, scaled down (CSS zoom keeps the scroll width in step). */}
-            <div style={{ zoom: wide ? 0.9 : 0.62 }}>
-              <Keyboard variant={variantFromTimbre(timbre)} litMidis={litMidis} tonic={tonic} disabled={instrumentLoading} />
-            </div>
-          </div>
-        )}
-        <Progress />
-        <Transport withPiano />
-      </section>
-    </>
-  )
+  const desktop = useDesktop()
+  return desktop ? <DesktopListen /> : <PhoneListen goLibrary={goLibrary} back={back} />
 }
 
 /** Partition: reading view, with edit mode (existing grid editor). */
-export function ScoreScreen({ goLibrary, back }: { goLibrary?: () => void; back?: Back }) {
+export function ScoreScreen({ goLibrary, goListen, back }: { goLibrary?: () => void; goListen?: () => void; back?: Back }) {
   const { score, error, title, sub } = useMeta()
   const { isEditing, enter, exit } = useEditor()
+  const desktop = useDesktop()
+  if (!desktop) return <PartitionPhone onEdit={enter} goListen={goListen} goLibrary={goLibrary} />
   if (!score) return <><Header title="Partition" back={back} /><NoScore go={goLibrary} />{error && <p style={{ color: 'var(--red-btn)', padding: 16 }}>{error}</p>}</>
   return (
     <>
       <Header title={title} sub={sub} back={back} right={<>
+        {desktop && !isEditing && <VoiceBar />}
         <button type="button" onClick={isEditing ? exit : enter} style={{ ...pill(isEditing, 36), marginRight: 2, display: 'inline-flex', alignItems: 'center', gap: 6 }}><Icon name={isEditing ? 'check' : 'pencil'} size={16} />{isEditing ? 'Terminer' : 'Éditer'}</button>
         <DisplayMenu />
       </>} />
       {isEditing ? (
-        <><EditorGrid /><RhythmToolbar /></>
+        <><PhraseList editable /><RhythmToolbar /></>
       ) : (
         <>
-          <div style={{ flex: 'none', padding: '0 16px 8px' }}><VoiceBar /></div>
+          {!desktop && <div style={{ flex: 'none', padding: '0 16px 8px' }}><VoiceBar /></div>}
           <PhraseList />
-          <div style={{ flex: 'none', padding: '8px 16px 10px', background: 'var(--bg2)', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ flex: 'none', padding: '4px 16px 6px', background: 'var(--bg2)', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Progress /><Transport />
           </div>
         </>
@@ -169,18 +140,61 @@ export function ScoreScreen({ goLibrary, back }: { goLibrary?: () => void; back?
   )
 }
 
-const MODES: ListenMode[] = ['tutti', 'solo', 'without']
-
 /**
  * Chorale panel, organised by task (proposal A):
  *  - Ma partie: which voice I sing, how I listen, the sound of my voice
- *  - Le chœur: the choir's sound, its effects, recording real voices
- * Tempo / tonique / per-voice mute live in the centre on desktop (no duplicates).
+ *  - Le chœur: choir effects and recording real voices (shown when a sung sound is used)
+ * Tempo · son · tonique sit next to S A T B above the score: never repeated here.
  */
+const caption: CSSProperties = { fontSize: 11, fontWeight: 700, color: '#6E6E73', letterSpacing: '0.06em', textTransform: 'uppercase' }
+const tick = (on: boolean): CSSProperties => on
+  ? { flex: 'none', width: 20, height: 20, borderRadius: 10, background: '#1D1D1F', boxShadow: 'inset 0 0 0 6px #1D1D1F, inset 0 0 0 20px #FFFFFF' }
+  : { flex: 'none', width: 20, height: 20, borderRadius: 10, border: '1.5px solid #AEAEB2', boxSizing: 'border-box' }
+const radioRow = (i: number, min: number): CSSProperties => ({
+  display: 'flex', alignItems: 'center', gap: 12, minHeight: min, padding: '4px 12px', border: 'none', background: 'transparent', color: '#1D1D1F', width: '100%',
+  borderTop: i ? '1px solid #E5E5EA' : undefined, textAlign: 'left',
+})
+
+/** Web right column: je chante · écoute · son · son de ma voix (same controls as the design's web board). */
+function WebChoirPanel() {
+  const { myVoice, mySound, set } = usePrefs()
+  const { sung, instrumentId, setSung, setInstrument } = usePlayer()
+  const voices = !!sung
+  const pillBtn = (on: boolean): CSSProperties => ({ height: 32, padding: '0 12px', borderRadius: 16, border: 'none', fontSize: 12.5, fontWeight: 600, background: on ? '#1D1D1F' : '#F2F2F7', color: on ? '#FFFFFF' : '#1D1D1F' })
+  return (
+    <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <span style={caption}>Je chante</span>
+      <div role="radiogroup" aria-label="Je chante" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 6 }}>
+        {VOICES.map(v => {
+          const on = myVoice === v
+          return <button key={v} type="button" role="radio" aria-checked={on} aria-label={NAME[v]} onClick={() => set('myVoice', v)}
+            style={{ height: 44, borderRadius: 10, border: 'none', fontSize: 16, fontWeight: 800, background: on ? VCOLOR[v] : '#F2F2F7', color: on ? '#FFFFFF' : VCOLOR[v] }}>{v}</button>
+        })}
+      </div>
+      <span style={caption}>Sons {voices ? 'de voix' : 'd’instruments'}</span>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        {voices
+          ? SUNG_STYLES.map(x => <button key={x.id} type="button" aria-pressed={sung === x.id} onClick={() => setSung(x.id)} style={pillBtn(sung === x.id)}>{x.hint ? x.label : `« ${x.label} »`}</button>)
+          : INSTRUMENT_CHOICES.map(id => <button key={id} type="button" aria-pressed={instrumentId === id} onClick={() => setInstrument(id)} style={pillBtn(instrumentId === id)}>{SHORT_SOUND[id] ?? INSTRUMENT_BY_ID[id]?.label ?? id}</button>)}
+      </div>
+      <SoundPicker effectsOnly />
+      <span style={caption}>Son de ma voix</span>
+      <div role="radiogroup" aria-label="Son de ma voix" style={{ display: 'flex', flexDirection: 'column', borderRadius: 12, background: '#F2F2F7' }}>
+        {SOUNDS.map((o, i) => (
+          <button key={o.value} type="button" role="radio" aria-checked={mySound === o.value} onClick={() => set('mySound', o.value)} style={radioRow(i, 44)}>
+            <span style={{ flex: 1, fontSize: 14, fontWeight: 600 }}>{o.label}</span><span style={tick(mySound === o.value)} />
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export function ChoirPanel() {
-  const { myVoice, mode, mySound, set } = usePrefs()
-  const { muted, solo, toggleMute } = usePlayer()
+  const { myVoice, mySound, set } = usePrefs()
+  const mix = useVoiceMix()
   const desktop = useDesktop()
+  if (desktop) return <WebChoirPanel />
   return (
     <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '14px 12px 20px', display: 'flex', flexDirection: 'column', gap: 24 }}>
       <section aria-label="Ma partie">
@@ -196,12 +210,10 @@ export function ChoirPanel() {
             </div>
           </div>
           <div className="ios-row stack">
-            <span>Écoute</span>
-            <div role="radiogroup" aria-label="Écoute" className="ios-seg">
-              {MODES.map(m => (
-                <button key={m} type="button" role="radio" aria-checked={mode === m} onClick={() => set('mode', m)}>
-                  {m === 'without' ? 'Sans moi' : m === 'solo' ? 'Ma voix' : MODE_LABEL[m]}
-                </button>
+            <span>Qui chante</span>
+            <div role="radiogroup" aria-label="Qui chante" className="ios-seg">
+              {mix.presets.map(p => (
+                <button key={p.id} type="button" role="radio" aria-checked={p.active} onClick={p.apply}>{p.label}</button>
               ))}
             </div>
           </div>
@@ -216,26 +228,18 @@ export function ChoirPanel() {
         </div>
       </section>
 
-      <section aria-label="Le chœur">
-        <div className="ios-caption">Le chœur</div>
-        {desktop
-          ? <div className="ios-group"><SoundCombo row /><SoundPicker /></div>
-          : <SoundPicker />}
+      <SoundPicker effectsOnly />
+
+      <section aria-label="Son">
+        <div className="ios-caption">Son</div>
+        <SoundBar />
       </section>
 
-      {!desktop && (
-        <section aria-label="Pupitres">
-          <div className="ios-caption">Pupitres actifs</div>
-          <div className="ios-seg">
-            {VOICES.map(v => {
-              const on = solo.size ? solo.has(v) : !muted[v]
-              return <button key={v} type="button" aria-pressed={on} onClick={() => toggleMute(v)} style={{ color: on ? COLOR[v] : 'var(--text3)' }}>{NAME[v]}</button>
-            })}
-          </div>
-        </section>
-      )}
+      <section aria-label="Pupitres">
+        <div className="ios-caption">Pupitres actifs</div>
+        <VoiceMixBar padding="0" />
+      </section>
 
-      {!desktop && <SettingsChips />}
     </div>
   )
 }
@@ -248,7 +252,7 @@ export function ChoirView({ goLibrary, back }: { goLibrary?: () => void; back?: 
     <>
       <Header title="Répétition" sub={`${title} · ${NAME[myVoice]}`} back={back} />
       <ChoirPanel />
-      <div style={{ flex: 'none', padding: '8px 16px 10px', background: 'var(--bg2)', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ flex: 'none', padding: '4px 16px 6px', background: 'var(--bg2)', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 2 }}>
         <Progress /><Transport />
       </div>
     </>

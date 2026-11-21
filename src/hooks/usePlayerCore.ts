@@ -46,6 +46,7 @@ export function usePlayerCore() {
   const [solo,        setSolo]       = useState<Set<Voice>>(new Set())
   const [currentBeat, setCurrentBeat] = useState(0)
   const [litMidis,    setLitMidis]   = useState<Partial<Record<Voice, number>>>({})
+  const [loop,        setLoop]       = useState(false)
 
   // ── Refs (for scheduling — no re-render needed) ───────────
   // Lazy-init so the AudioEngine/Set aren't constructed and discarded each render.
@@ -167,7 +168,7 @@ export function usePlayerCore() {
     score, setScore, error, setError, status, setStatus,
     tempo, setTempoVal, tonic, setTonicVal, timbre, setTimbreVal,
     instrumentId, setInstrumentIdVal, instrumentLoading, setInstrumentLoading, sung, setSungVal,
-    muted, setMuted, solo, setSolo, currentBeat, setCurrentBeat, litMidis, setLitMidis,
+    muted, setMuted, solo, setSolo, currentBeat, setCurrentBeat, litMidis, setLitMidis, loop, setLoop,
     // refs
     engineRef, scoreRef, statusRef, tempoRef, tonicRef, mutedRef, soloRef,
     playStartBeatRef, startCtxTimeRef, currentBeatRef, loopStartRef, loopEndRef,

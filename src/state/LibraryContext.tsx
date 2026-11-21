@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { syncToCatalog } from '../services/catalogSync'
 
 /** A score the user added or fixed on this device (stored in the browser). */
 export interface LibraryItem {
@@ -30,8 +31,11 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<LibraryItem[]>(load)
   useEffect(() => { try { localStorage.setItem(KEY, JSON.stringify(items)) } catch { /* quota / private mode */ } }, [items])
 
-  const save = useCallback((it: Omit<LibraryItem, 'updatedAt'>) =>
-    setItems(xs => [{ ...it, updatedAt: Date.now() }, ...xs.filter(x => x.id !== it.id)]), [])
+  const save = useCallback((it: Omit<LibraryItem, 'updatedAt'>) => {
+    setItems(xs => [{ ...it, updatedAt: Date.now() }, ...xs.filter(x => x.id !== it.id)])
+    // Dev: also write catalog/<file>.msolfa; remember its path as `origin` (hides the bundled twin, keeps one entry).
+    syncToCatalog(it, origin => setItems(xs => xs.map(x => x.id === it.id ? { ...x, origin } : x)))
+  }, [])
   const remove = useCallback((id: string) => setItems(xs => xs.filter(x => x.id !== id)), [])
 
   const value = useMemo(() => ({ items, save, remove }), [items, save, remove])

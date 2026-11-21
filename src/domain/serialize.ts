@@ -12,18 +12,32 @@ function noteToken(n: EditNote): string {
   return n.degree + chrom(n.chromatic) + n.octave
 }
 
-function slotToken(s: EditSlot): string {
+export function slotToken(s: EditSlot): string {
   if (s.kind === 'note') return noteToken(s)
   if (s.kind === 'tie')  return '-'
-  return '' // rest as first half-beat → ".b" form
+  return '0'
 }
 
-function cellToToken(cell: EditCell): string {
+export function cellToToken(cell: EditCell): string {
   switch (cell.kind) {
     case 'note': return noteToken(cell)
     case 'tie':  return '-'
     case 'rest': return '0'
-    case 'pair': return `${slotToken(cell.a)}.${noteToken(cell.b)}`
+    case 'tuple': {
+      const [a, b] = cell.slots
+      if (cell.slots.length === 2) {
+        if (b.kind === 'note') return `${a.kind === 'rest' ? '' : slotToken(a)}.${noteToken(b)}` // "a.b", "-.b", ".b"
+        if (a.kind === 'tie' && b.kind === 'rest') return '-.'
+        return slotToken(a)
+      }
+      const tk = cell.slots.map(slotToken)
+      const d = cell.durs
+      if (d && tk.length === 3) {
+        if (d[0] === 0.5)  return `${tk[0]}.(${tk[1]}.${tk[2]})`  // "a.(b.c)"
+        if (d[2] === 0.5)  return `(${tk[0]}.${tk[1]}).${tk[2]}`  // "(a.b).c"
+      }
+      return tk.join('.')
+    }
   }
 }
 
@@ -47,6 +61,7 @@ export function editModelToText(model: EditModel): string {
         .join(' | ')
       lines.push(`${v}. || ${body} ||`)
     })
+    if (block.lyrics) lines.push(`W. ${block.lyrics}`)
     lines.push('')
   })
 

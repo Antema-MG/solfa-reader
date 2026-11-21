@@ -18,7 +18,7 @@
   --ink:     #1d1d1f;
   --on-ink:  #ffffff;
   --cur:     #fff6e3;
-  --green:   #1d9e75;
+  --green:   #34c759;
   --green2:  #0f6e56;
   --red-btn: #c0392b;
   --s: #b3261e;
@@ -29,9 +29,9 @@
   --a-bg: rgba(31,91,181,0.14);
   --t-bg: rgba(61,110,18,0.14);
   --b-bg: rgba(138,76,8,0.14);
-  --mono: 'Consolas', 'Courier New', monospace;
-  --sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif;
-  --fill: rgba(118,118,128,0.12);   /* iOS tertiary fill: segmented tracks, steppers */
+  --mono: 'JetBrains Mono', 'Consolas', 'Courier New', monospace;
+  --sans: Inter, -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif;
+  --fill: rgba(118,118,128,0.14);   /* iOS tertiary fill: segmented tracks, steppers */
 }
 
 /* ── Apple-style grouped lists and segmented controls ─────────
@@ -66,6 +66,11 @@ button.ios-row:first-child { border-top: none; }
 .tp { display: grid; place-items: center; padding: 0; border: none; border-radius: 50%; background: transparent; color: var(--text); flex: none; transition: background .15s, transform .1s; }
 .tp:active:not(:disabled) { background: var(--fill); transform: scale(.9); }
 @media (hover: hover) { .tp:hover:not(:disabled) { background: var(--fill); } }
+/* Quiet text button (tempo · son · tonique): no box at rest, soft pill on hover/press */
+.qs { display: inline-flex; align-items: center; gap: 4px; max-width: 220px; height: 30px; padding: 0 8px; border: none; border-radius: 8px;
+  background: transparent; color: var(--text2); font-size: 13px; font-weight: 500; transition: background .15s, color .15s; }
+.qs:hover, .qs[aria-expanded="true"] { background: var(--fill); color: var(--text); }
+.qs:active { background: var(--bg4); }
 .menu-item:hover:not(:disabled), .menu-item:focus-visible { background: var(--fill) !important; outline: none; }
 .ios-stepper { display: inline-flex; align-items: center; border-radius: 8px; background: var(--fill); }
 .ios-stepper > button { width: 44px; height: 30px; border: none; background: none; font-size: 18px; color: var(--text); }

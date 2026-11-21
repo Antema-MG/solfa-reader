@@ -27,7 +27,7 @@ Il permet de :
 - Notes : `d r m f s l t/ti`
 - Altérations : suffixe `i` (dièse ♯), suffixe `a` (bémol ♭)
 - Modificateurs d'octave : `'` (aigu), `,` (grave) — collés sans espace
-- Valeurs rythmiques : note simple, `-` (tenu), `0`/`_`/vide (silence), `.` (pointé), deux croches
+- Valeurs rythmiques : note simple, `-` (tenu), `0`/`_`/vide (silence), `.` = alias de `,` (grave) ou séparateur de croches : 2 (`s.f`), 3 (`m.r.d`) ou 4 (`m.r.d.s`) croches par temps
 - Anacrouse : `:` initial dans une mesure incomplète
 
 ### 2. Exemples par type de mesure (exemples_msolfa_v2.md)

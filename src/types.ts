@@ -42,16 +42,20 @@ export interface Score {
 export interface EditNote { kind: 'note'; degree: string; chromatic: number; octave: string }
 export interface EditTie  { kind: 'tie' }
 export interface EditRest { kind: 'rest' }
-// Two-eighths beat: first slot may be note/tie/rest, second is always a note
-// (mirrors the .msolfa grammar: `a.b`, `-.b`, `.b`).
+// Subdivided beat: 2 (croches), 3 or 4 equal slots, each note/tie/rest
+// (grammar: `a.b`, `-.b`, `.b`, `a.b.c`, `a.b.c.d`).
 export type EditSlot = EditNote | EditTie | EditRest
-export interface EditPair { kind: 'pair'; a: EditSlot; b: EditNote }
-export type EditCell = EditNote | EditTie | EditRest | EditPair
+/** `durs` (in beats, sums to 1) is set only for unequal splits: quarter-beat figures
+ *  "a.(b.c)" = [0.5, 0.25, 0.25] and "(a.b).c" = [0.25, 0.25, 0.5]. Absent = equal slots. */
+export interface EditTuple { kind: 'tuple'; slots: EditSlot[]; durs?: number[] }
+export type EditCell = EditNote | EditTie | EditRest | EditTuple
 
 export interface EditMeasure { beats: Record<Voice, EditCell[]> }
-export interface EditBlock   { comment: string | null; measures: EditMeasure[] }
+/** `lyrics` = the block's soprano syllables, space-separated ('' = none). */
+export interface EditBlock   { comment: string | null; lyrics: string; measures: EditMeasure[] }
 export interface EditModel   { meta: Metadata; numerator: number; blocks: EditBlock[] }
-export interface EditSelection { block: number; voice: Voice; measure: number; beat: number; slot: 'a' | 'b' | null }
+/** `slot` = index inside a tuple cell (null = whole cell). */
+export interface EditSelection { block: number; voice: Voice; measure: number; beat: number; slot: number | null }
 
 export interface ParseError { line: number; message: string; voice?: string }
 export type ParseResult =
@@ -75,8 +79,11 @@ export interface MsolfaPlayerState {
   solo:        Set<Voice>
   currentBeat: number
   litMidis:    Partial<Record<Voice, number>>
+  /** Loop on the phrase being played. */
+  loop:        boolean
   // actions
-  openFile:      (text: string) => void
+  /** keepMix: live-edit reload that keeps mute/solo, tempo and tonic. */
+  openFile:      (text: string, keepMix?: boolean) => void
   play:          () => void
   pause:         () => void
   stop:          () => void
@@ -91,5 +98,15 @@ export interface MsolfaPlayerState {
   setTakes:      (takes: Takes) => void
   toggleMute:    (v: Voice)     => void
   toggleSolo:    (v: Voice)     => void
+  /** Exactly these voices sound; the others are muted (clears any solo). */
+  setAudible:    (voices: Voice[]) => void
   clearSelection: () => void
+  /** Loop the phrase under the playhead (on/off). */
+  toggleLoop:    () => void
+  /** Hear the key: the tonic (do) of the current tonality. */
+  playKey:       () => void
+  /** Hear the starting note of each voice (S A T B), then all together. */
+  playClefs:     () => void
+  /** Hear a single note (piano key tap). */
+  playNote:      (midi: number) => void
 }

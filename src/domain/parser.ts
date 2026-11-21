@@ -1,4 +1,4 @@
-import type { Voice, Beat, Measure, NoteEvent, RenderBlock, Score, ParseError, ParseResult, Element } from '../types'
+import type { Voice, Beat, Measure, NoteEvent, RenderBlock, ParseError, ParseResult, Element } from '../types'
 
 const VOICES: Voice[] = ['S', 'A', 'T', 'B']
 const NOTE_RE         = /^([drmfslt])([ia]?)('{1,2}|,{1,2})?$/
@@ -26,6 +26,84 @@ function resolveOctave(explicit: string | undefined, trailingDot: string | undef
   return explicit ?? (trailingDot ? ',' : '')
 }
 
+/**
+ * 3 or 4 equal subdivisions: "a.b.c", "a.b.c.d". Slot = note | "-" tie | "0"/"_"/"" rest.
+ * Trailing "." after 3+ slots = octave grave on the last note ("a.b.c." = "a.b.c,").
+ * (Two slots stay on the pair rules above.) Returns null when not a valid tuple.
+ */
+function parseTuple(t: string): Element[] | null {
+  let parts = t.split('.')
+  const grave = parts.length > 3 && parts[parts.length - 1] === ''
+  if (grave) parts = parts.slice(0, -1)
+  if (parts.length < 3 || parts.length > 4) return null
+  const dur = 1 / parts.length
+  const out: Element[] = []
+  for (let i = 0; i < parts.length; i++) {
+    const p = parts[i]
+    if (p === '-') { out.push({ kind: 'tie', dur }); continue }
+    if (p === '0' || p === '_' || p === '') { out.push({ kind: 'rest', dur }); continue }
+    const m = p.match(NOTE_RE)
+    if (!m) return null
+    out.push({ kind: 'note', degree: m[1], chromatic: resolveChrm(m[2]), octave: m[3] ?? (grave && i === parts.length - 1 ? ',' : ''), dur })
+  }
+  if (grave && out[out.length - 1].kind !== 'note') return null
+  return out
+}
+
+/** One slot of a subdivision: note | "-" tie | "0"/"_"/"" rest, at duration `dur`. */
+function parseSlot(p: string, dur: number): Element | null {
+  if (p === '-') return { kind: 'tie', dur }
+  if (p === '0' || p === '_' || p === '') return { kind: 'rest', dur }
+  const m = p.match(NOTE_RE)
+  return m ? { kind: 'note', degree: m[1], chromatic: resolveChrm(m[2]), octave: m[3] ?? '', dur } : null
+}
+
+/**
+ * Quarter-beat figures: one half of the beat is itself split in two.
+ *   "m.(r.d)" = m (1/2) + r (1/4) + d (1/4)      "(t,.d).r" = t, (1/4) + d (1/4) + r (1/2)
+ * A half is a slot or a parenthesised pair "(a.b)". At least one half must be a pair.
+ * Returns null when the token is not of this form (plain beats are handled elsewhere).
+ */
+function parseNested(t: string): Element[] | null {
+  if (!t.includes('(')) return null
+  const halves: string[] = []
+  let rest = t
+  for (let h = 0; h < 2; h++) {
+    if (rest.startsWith('(')) {
+      const close = rest.indexOf(')')
+      if (close < 0) return null
+      halves.push(rest.slice(0, close + 1))
+      rest = rest.slice(close + 1)
+    } else {
+      const dot = rest.indexOf('.')
+      if (h === 0) { if (dot < 0) return null; halves.push(rest.slice(0, dot)); rest = rest.slice(dot) }
+      else { halves.push(rest); rest = '' }
+    }
+    if (h === 0) { if (!rest.startsWith('.')) return null; rest = rest.slice(1) }
+  }
+  if (rest !== '' || !halves.some(h => h.startsWith('('))) return null
+  const out: Element[] = []
+  for (const h of halves) {
+    if (h.startsWith('(')) {
+      if (!h.endsWith(')')) return null
+      const pair = h.slice(1, -1).split('.')
+      if (pair.length !== 2) return null
+      for (const s of pair) { const e = parseSlot(s, 0.25); if (!e) return null; out.push(e) }
+    } else {
+      if (h.includes('(') || h.includes(')')) return null
+      const e = parseSlot(h, 0.5); if (!e) return null; out.push(e)
+    }
+  }
+  return out
+}
+
+/** Elements of one beat token, or null if invalid (for in-place editing). */
+export function parseBeatToken(tok: string): Element[] | null {
+  const errs: ParseError[] = []
+  const els = parseToken(tok, 0, errs)
+  return errs.length ? null : els
+}
+
 function parseToken(tok: string, line: number, errors: ParseError[]): Element[] {
   // Normalise: strip all internal whitespace so "- .r" == "-.r"
   const t = tok.trim().replace(/\s+/g, '')
@@ -34,6 +112,10 @@ function parseToken(tok: string, line: number, errors: ParseError[]): Element[] 
 
   // "- ." normalises to "-." → tie 0.5 + rest 0.5
   if (t === '-.') return [{ kind: 'tie', dur: 0.5 }, { kind: 'rest', dur: 0.5 }]
+
+  // Quarter-beat figures : "m.(r.d)", "(t,.d).r"
+  const nested = parseNested(t)
+  if (nested) return nested
 
   // Rule 4 : "-.note" or "-.note." → tie 0.5 + note 0.5
   let m = t.match(TIE_NOTE_RE)
@@ -63,6 +145,10 @@ function parseToken(tok: string, line: number, errors: ParseError[]): Element[] 
   // Normal note
   m = t.match(NOTE_RE)
   if (m) return [{ kind: 'note', degree: m[1], chromatic: resolveChrm(m[2]), octave: m[3] ?? '', dur: 1 }]
+
+  // 3 or 4 croches : "a.b.c", "a.b.c.d"
+  const tuple = parseTuple(t)
+  if (tuple) return tuple
 
   errors.push({ line, message: `Symbole invalide : "${tok.trim()}"` })
   return [{ kind: 'rest', dur: 1 }]

@@ -19,3 +19,12 @@ solfa/                        sources PDF / OCR
 - Un fichier dans `catalog/` qui ne parse plus apparaît quand même dans « à corriger ».
 - Le chemin lu par l'app est défini en un seul endroit : `import.meta.glob` dans
   `src/components/Catalog/CatalogView.tsx`.
+
+## Partitions créées ou modifiées dans l'app
+
+- Sur l'appareil : chaque création / édition est sauvegardée dans le navigateur (bibliothèque locale).
+- En développement (`npm run dev`) : elle est aussi écrite dans `catalog/<titre>.msolfa`
+  (un fichier existant du catalogue est modifié sur place). Il suffit de `git commit` pour la déployer.
+- En production : pas d'écriture sur le dépôt (site statique), la sauvegarde reste locale à l'appareil.
+- Le point d'entrée (`/__catalog`) n'existe qu'en dev, accepte seulement `localhost` et ne crée que `catalog/*.msolfa`
+  (`tools/catalogWriter.ts`). Rien n'est supprimé automatiquement.

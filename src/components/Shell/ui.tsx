@@ -1,8 +1,9 @@
 import { useEffect, useId, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from 'react'
+import { INSTRUMENTS, SHORT_SOUND } from '../../domain/sounds'
 import { Icon } from './Icon'
 import type { Voice } from '../../types'
 import { usePlayer } from '../../state/PlayerContext'
-import { usePrefs, type ListenMode, type FontSize } from '../../state/PrefsContext'
+import { usePrefs, type FontSize } from '../../state/PrefsContext'
 import { TONICS } from '../../domain/pitch'
 import { INSTRUMENT_BY_ID, INSTRUMENTS as INSTRUMENT_LIST, type InstrumentId } from '../../types/music'
 import { SUNG_STYLES, SUNG_LABEL, isSung } from '../../domain/choir'
@@ -19,33 +20,133 @@ export const pill = (on: boolean, h = 32): CSSProperties => ({
 
 const VOICE_LABEL: Record<Voice, string> = { S: 'Soprano', A: 'Alto', T: 'Ténor', B: 'Basse' }
 
-/** The original voice bar: tap a voice to mute it (struck through), Solo to isolate one. */
+/**
+ * The bar above the score: S A T B (tap = mute, ring = "je chante") and, right
+ * next to them, the three settings people actually change while rehearsing.
+ */
 export function VoiceBar() {
-  const { muted, solo, toggleMute, toggleSolo } = usePlayer()
+  const { muted, solo, toggleMute } = usePlayer()
   const { myVoice } = usePrefs()
   return (
-    <div role="group" aria-label="Voix" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-      {VOICES.map(v => {
-        const off = solo.size ? !solo.has(v) : muted[v]
-        return (
-          <button key={v} type="button" aria-pressed={!off} onClick={() => toggleMute(v)} style={{
-            display: 'flex', alignItems: 'center', gap: 6, height: 34, padding: '0 11px', borderRadius: 17,
-            border: `1px solid ${COLOR[v]}`, color: COLOR[v], background: 'transparent', fontSize: 12, fontWeight: 600,
-            opacity: off ? 0.38 : 1, textDecoration: off ? 'line-through' : 'none',
-            boxShadow: v === myVoice ? '0 0 0 2px var(--bg), 0 0 0 3.5px var(--a)' : undefined,
-          }}>
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: COLOR[v] }} />
-            {VOICE_LABEL[v]}
-          </button>
-        )
-      })}
-      <span style={{ fontSize: 13, color: 'var(--text2)', marginLeft: 4 }}>Solo</span>
-      {VOICES.map(v => (
-        <button key={v} type="button" aria-pressed={solo.has(v)} aria-label={`Solo ${VOICE_LABEL[v]}`} onClick={() => toggleSolo(v)} style={{
-          width: 32, height: 32, borderRadius: 8, border: '1px solid var(--border2)', fontSize: 11, fontWeight: 700,
-          background: solo.has(v) ? 'var(--ink)' : 'var(--bg3)', color: solo.has(v) ? 'var(--on-ink)' : 'var(--text2)',
-        }}>{v}</button>
-      ))}
+    <div style={{ display: 'flex', gap: '6px 10px', flexWrap: 'wrap', alignItems: 'center' }}>
+      <div role="group" aria-label="Voix" style={{ display: 'flex', gap: 6 }}>
+        {VOICES.map(v => {
+          const off = solo.size ? !solo.has(v) : muted[v]
+          return (
+            <button key={v} type="button" aria-pressed={!off} aria-label={VOICE_LABEL[v]} title={VOICE_LABEL[v]} onClick={() => toggleMute(v)} style={{
+              width: 32, height: 32, borderRadius: 16, border: `1.5px solid ${COLOR[v]}`, fontSize: 12, fontWeight: 700,
+              background: off ? 'transparent' : COLOR[v], color: off ? COLOR[v] : '#fff', opacity: off ? 0.4 : 1,
+              boxShadow: v === myVoice ? '0 0 0 2px var(--bg), 0 0 0 3.5px var(--a)' : undefined,
+            }}>{v}</button>
+          )
+        })}
+      </div>
+      <QuickSettings />
+    </div>
+  )
+}
+
+type QOpt = { value: string; label: string; group?: string; hint?: string }
+
+/**
+ * A quiet text button that opens a choice: a menu dropped under it with a mouse
+ * (type to filter when `filter`), a bottom sheet on touch. `top` sits above the
+ * list (e.g. the tempo −/+), `sheet` replaces the list on touch (e.g. sound tiles).
+ */
+function QuickPick({ text, title, value, options, onPick, filter = false, top, sheet }: {
+  text: string; title: string; value: string; options: QOpt[]; onPick: (v: string) => void
+  filter?: boolean; top?: ReactNode; sheet?: ReactNode
+}) {
+  const mouse = useMouse()
+  const [open, setOpen] = useState(false)
+  const [q, setQ] = useState('')
+  const wrap = useRef<HTMLDivElement>(null)
+  const list = useRef<HTMLDivElement>(null)
+  const close = () => { setOpen(false); setQ('') }
+  const shown = options.filter(o => fold(o.label).includes(fold(q.trim())))
+  useEffect(() => {
+    if (!open || !mouse) return
+    list.current?.querySelector('[aria-selected="true"]')?.scrollIntoView({ block: 'center' })
+    const out = (e: MouseEvent) => { if (!wrap.current?.contains(e.target as Node)) close() }
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') close() }
+    document.addEventListener('mousedown', out); window.addEventListener('keydown', esc)
+    return () => { document.removeEventListener('mousedown', out); window.removeEventListener('keydown', esc) }
+  }, [open, mouse])
+  const pick = (v: string) => { onPick(v); close() }
+  return (
+    <div ref={wrap} style={{ position: 'relative', minWidth: 0 }}>
+      <button type="button" className="qs" aria-label={`${title} : ${text}`} aria-haspopup={mouse ? 'listbox' : 'dialog'} aria-expanded={open} onClick={() => open ? close() : setOpen(true)}>
+        <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{text}</span>
+        <Icon name="chevronDown" size={11} style={{ color: 'var(--text3)', transform: open ? 'rotate(180deg)' : undefined, transition: 'transform .15s' }} />
+      </button>
+      {open && mouse && (
+        <div role="listbox" aria-label={title} style={{
+          position: 'absolute', top: 'calc(100% + 4px)', left: 0, zIndex: 60, width: 250, padding: 5, background: 'var(--bg2)', borderRadius: 12,
+          boxShadow: '0 12px 32px rgba(0,0,0,.16), 0 0 0 0.5px var(--border2)', display: 'flex', flexDirection: 'column', gap: 4,
+        }}>
+          {top}
+          {filter && <input autoFocus value={q} onChange={e => setQ(e.target.value)} placeholder="Rechercher…" aria-label={`Rechercher ${title.toLowerCase()}`}
+            onKeyDown={e => { if (e.key === 'Enter' && shown[0]) pick(shown[0].value) }}
+            style={{ height: 30, border: 'none', borderRadius: 8, background: 'var(--fill)', padding: '0 9px', fontSize: 13, color: 'var(--text)', outline: 'none' }} />}
+          <div ref={list} style={{ maxHeight: 300, overflowY: 'auto' }}>
+            {shown.length === 0 && <div style={{ padding: '8px 10px', fontSize: 13, color: 'var(--text2)' }}>Aucun résultat</div>}
+            {shown.map((o, i) => (
+              <div key={o.value}>
+                {o.group && o.group !== shown[i - 1]?.group && <div style={{ fontSize: 12, color: 'var(--text2)', padding: '8px 10px 3px 28px' }}>{o.group}</div>}
+                <button type="button" role="option" aria-selected={o.value === value} className="menu-item" onClick={() => pick(o.value)} style={{
+                  width: '100%', display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px', border: 'none', borderRadius: 7,
+                  background: 'transparent', fontSize: 14, textAlign: 'left', color: 'var(--text)',
+                }}>
+                  <span style={{ width: 14, flex: 'none' }}>{o.value === value && <Icon name="check" size={13} />}</span>
+                  <span style={{ flex: 1 }}>{o.label}</span>
+                  {o.hint && <span style={{ fontSize: 12, color: 'var(--text3)' }}>{o.hint}</span>}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {open && !mouse && (
+        <Sheet title={title} onClose={close}>
+          {top}
+          {sheet ?? <Options value={value} onPick={pick} options={options.map(o => ({ value: o.value, label: o.label + (o.hint ? ` · ${o.hint}` : '') }))} />}
+        </Sheet>
+      )}
+    </div>
+  )
+}
+
+const TEMPOS = Array.from({ length: 211 }, (_, i) => 30 + i)
+export const SOUND_OPTIONS: QOpt[] = [
+  ...SUNG_STYLES.map(x => ({ value: x.id, label: x.hint ? `${x.label} (${x.hint})` : `Chœur « ${x.label} »`, group: 'Voix chantées' })),
+  ...INSTRUMENT_LIST.map(i => ({ value: i.id, label: i.label, group: 'Instruments' })),
+]
+
+/** `96 BPM ⌄ · Solfège chanté ⌄ · do = Ré ⌄` — the only place tempo, sound and key are set. */
+export function QuickSettings() {
+  const { tempo, tonic, setTempo, setTonic, score, sung, instrumentId, setSung, setInstrument } = usePlayer()
+  const mouse = useMouse()
+  const soundLabel = useSoundLabel()
+  const orig = score?.metadata.tempo, origKey = score?.metadata.key
+  const nudge = (d: number) => setTempo(Math.min(240, Math.max(30, tempo + d)))
+  const tonicLabel = TONICS.find(([k]) => k === tonic)?.[1] ?? tonic
+  const tempos = mouse ? TEMPOS : [...new Set([60, 70, 80, 90, 100, 110, tempo, ...(orig ? [orig] : [])])].sort((a, b) => a - b)
+  const dot = <span aria-hidden style={{ color: 'var(--text3)', fontSize: 12 }}>·</span>
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 2, minWidth: 0, flexWrap: 'wrap' }}>
+      <QuickPick text={`${tempo} BPM`} title="Tempo" value={String(tempo)} filter
+        options={tempos.map(t => ({ value: String(t), label: `${t} BPM`, hint: t === orig ? 'original' : undefined }))}
+        onPick={v => setTempo(+v)}
+        top={<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: mouse ? '2px 4px 4px 8px' : '0 4px 10px' }}>
+          <span style={{ fontSize: 15, fontWeight: 600 }}>{tempo} BPM</span>
+          <span className="ios-stepper"><button type="button" aria-label="Plus lent" onClick={() => nudge(-5)}>−</button><i /><button type="button" aria-label="Plus vite" onClick={() => nudge(5)}>+</button></span>
+        </div>} />
+      {dot}
+      <QuickPick text={soundLabel} title="Son" value={sung ?? instrumentId} filter options={SOUND_OPTIONS}
+        onPick={v => isSung(v) ? setSung(v) : setInstrument(v as InstrumentId)} sheet={<SoundPicker onCard />} />
+      {dot}
+      <QuickPick text={`do = ${tonicLabel}`} title="Tonique (do =)" value={tonic}
+        options={TONICS.map(([k, l]) => ({ value: k, label: l, hint: k === origKey ? 'original' : undefined }))} onPick={setTonic} />
     </div>
   )
 }
@@ -115,16 +216,7 @@ function Options<T extends string | number>({ options, value, onPick }: {
   )
 }
 
-export const MODE_LABEL: Record<ListenMode, string> = {
-  tutti: 'Tutti', solo: 'Ma voix seule', without: 'Sans ma voix', front: 'Ma voix en avant',
-}
-const MODE_OPTIONS = (['tutti', 'solo', 'without', 'front'] as ListenMode[]).map(m => ({
-  value: m, label: MODE_LABEL[m] + (m === 'front' ? ' (bientôt)' : ''), disabled: m === 'front',
-}))
-export const INSTRUMENTS: InstrumentId[] = ['church_organ', 'acoustic_grand_piano', 'choir_aahs', 'string_ensemble_1', 'flute', 'trumpet']
-const SHORT: Partial<Record<InstrumentId, string>> = {
-  church_organ: 'Orgue', acoustic_grand_piano: 'Piano', choir_aahs: 'Chœur (samples)', string_ensemble_1: 'Cordes', flute: 'Flûte', trumpet: 'Trompette',
-}
+export { INSTRUMENTS, SHORT_SOUND }
 
 /** Current main sound, for chips and headers. */
 export function useSoundLabel(): string {
@@ -153,15 +245,13 @@ const Chevron = () => <svg width="8" height="13" viewBox="0 0 8 13" aria-hidden=
 
 /**
  * Sound picker: realistic sung choir or a sampled instrument as tiles, then the
- * choir rows (record real voices, effects). On desktop the sound itself is
- * chosen in the "Son" select, so only those rows are returned, to sit inside
- * the caller's group. `onCard`: drawn on a white surface (sheet, popover).
+ * choir rows (record real voices, effects). `effectsOnly`: just those rows, as
+ * the "Le chœur" group. `onCard`: drawn on a white surface (sheet, popover).
  */
-export function SoundPicker({ onCard = false }: { onCard?: boolean }) {
+export function SoundPicker({ onCard = false, effectsOnly = false }: { onCard?: boolean; effectsOnly?: boolean }) {
   const { sung, instrumentId, setSung, setInstrument } = usePlayer()
   const { singers, reverb, mySound, set } = usePrefs()
   const [recording, setRecording] = useState(false)
-  const desktop = useDesktop()
   const grid: CSSProperties = { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(76px, 1fr))', gap: 8 }
   const sungInUse = !!sung || SUNG_STYLES.some(x => x.id === mySound)
   const recordedInUse = sung === 'recorded' || mySound === 'recorded'
@@ -178,7 +268,10 @@ export function SoundPicker({ onCard = false }: { onCard?: boolean }) {
     </>}
     {recording && <RecordChoir onClose={() => setRecording(false)} />}
   </>
-  if (desktop) return rows
+  // Chorale panel: the sound itself is chosen next to S A T B, only the choir rows live here.
+  if (effectsOnly) return recordedInUse || sungInUse
+    ? <section aria-label="Le chœur"><div className="ios-caption">Le chœur</div><div className={`ios-group${onCard ? ' on-card' : ''}`}>{rows}</div></section>
+    : null
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
       <div>
@@ -198,7 +291,7 @@ export function SoundPicker({ onCard = false }: { onCard?: boolean }) {
         <div style={grid}>
           {(INSTRUMENTS.includes(instrumentId) ? INSTRUMENTS : [instrumentId, ...INSTRUMENTS]).map(id => {
             const on = !sung && instrumentId === id
-            return <button key={id} type="button" aria-pressed={on} onClick={() => setInstrument(id)} style={tile(on, onCard)}>{SHORT[id] ?? INSTRUMENT_BY_ID[id]?.label ?? id}</button>
+            return <button key={id} type="button" aria-pressed={on} onClick={() => setInstrument(id)} style={tile(on, onCard)}>{SHORT_SOUND[id] ?? INSTRUMENT_BY_ID[id]?.label ?? id}</button>
           })}
         </div>
       </div>
@@ -206,8 +299,6 @@ export function SoundPicker({ onCard = false }: { onCard?: boolean }) {
     </div>
   )
 }
-
-type Picker = 'tempo' | 'tonic' | 'inst' | 'fx' | null
 
 /** Desktop web (not phone landscape): mouse + keyboard, so filterable selects beat sheets. */
 export function useDesktop(): boolean {
@@ -276,78 +367,6 @@ export function Combo({ label, value, options, onPick, row = false }: { label: s
   )
 }
 
-const TEMPOS = Array.from({ length: 211 }, (_, i) => 30 + i)
-
-/** Desktop: Tempo · Tonique · Son · Écoute as filterable selects. */
-const SOUND_OPTIONS: ComboOpt[] = [
-  ...SUNG_STYLES.map(x => ({ value: x.id, label: x.hint ? `${x.label} (${x.hint})` : `Chœur « ${x.label} »`, group: 'Chœur réaliste' })),
-  ...INSTRUMENT_LIST.map(i => ({ value: i.id, label: i.label, group: 'Instruments' })),
-]
-
-/** Main sound of the choir as a filterable select (sung styles + every instrument). */
-export function SoundCombo({ label = 'Son', row = false }: { label?: string; row?: boolean }) {
-  const { sung, instrumentId, setSung, setInstrument } = usePlayer()
-  return <Combo label={label} row={row} value={sung ?? instrumentId} options={SOUND_OPTIONS}
-    onPick={v => isSung(v) ? setSung(v) : setInstrument(v as InstrumentId)} />
-}
-
-function SettingsCombos({ style }: { style?: CSSProperties }) {
-  const { tempo, tonic, setTempo, setTonic, score } = usePlayer()
-  const { mode, set } = usePrefs()
-  const orig = score?.metadata.tempo
-  return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 8, ...style }}>
-      <Combo label="Tempo" value={String(tempo)} onPick={v => setTempo(+v)}
-        options={TEMPOS.map(t => ({ value: String(t), label: `${t} BPM${t === orig ? ' · original' : ''}` }))} />
-      <Combo label="Tonique (do =)" value={tonic} onPick={setTonic}
-        options={TONICS.map(([k, l]) => ({ value: k, label: l + (k === score?.metadata.key ? ' · original' : '') }))} />
-      <SoundCombo />
-      <Combo label="Écoute" value={mode} onPick={v => set('mode', v as ListenMode)}
-        options={MODE_OPTIONS.map(o => ({ ...o, value: o.value as string }))} />
-    </div>
-  )
-}
-
-/** Settings row: filterable selects on desktop, chips + sheets on touch. */
-export function SettingsChips({ style }: { style?: CSSProperties }) {
-  return useDesktop() ? <SettingsCombos style={style} /> : <SettingsChipRow style={style} />
-}
-
-/** One quiet row of 4 chips (Tempo · Tonique · Instrument · Effet). Each opens a sheet. */
-function SettingsChipRow({ style }: { style?: CSSProperties }) {
-  const { tempo, tonic, setTempo, setTonic, score } = usePlayer()
-  const { mode, set } = usePrefs()
-  const soundLabel = useSoundLabel()
-  const [open, setOpen] = useState<Picker>(null)
-  const orig = score?.metadata.tempo
-  const tempos = [...new Set([60, 70, 80, 90, 100, ...(orig ? [orig] : [])])].sort((a, b) => a - b)
-  const tonicLabel = TONICS.find(([k]) => k === tonic)?.[1] ?? tonic
-  const chip: CSSProperties = {
-    flex: 1, minWidth: 0, height: 34, border: 'none', borderRadius: 17, background: 'var(--bg3)',
-    color: 'var(--text)', fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', padding: '0 8px',
-  }
-  const close = () => setOpen(null)
-  return (
-    <>
-      <div style={{ display: 'flex', gap: 6, ...style }}>
-        <button type="button" style={chip} onClick={() => setOpen('tempo')}>{tempo} BPM</button>
-        <button type="button" style={chip} onClick={() => setOpen('tonic')}>do = {tonicLabel}</button>
-        <button type="button" style={chip} onClick={() => setOpen('inst')}>{soundLabel}</button>
-        <button type="button" style={chip} onClick={() => setOpen('fx')}>{MODE_LABEL[mode]}</button>
-      </div>
-      {open === 'tempo' && <Sheet title="Tempo" onClose={close}>
-        <Options value={tempo} onPick={v => { setTempo(v); close() }}
-          options={tempos.map(t => ({ value: t, label: `${t} BPM${t === orig ? ' · original' : ''}` }))} /></Sheet>}
-      {open === 'tonic' && <Sheet title="Tonique (do =)" onClose={close}>
-        <Options value={tonic} onPick={v => { setTonic(v); close() }}
-          options={TONICS.map(([k, l]) => ({ value: k, label: l + (k === score?.metadata.key ? ' · original' : '') }))} /></Sheet>}
-      {open === 'inst' && <Sheet title="Son" onClose={close}><SoundPicker onCard /></Sheet>}
-      {open === 'fx' && <Sheet title="Effet de voix" onClose={close}>
-        <Options value={mode} onPick={v => { set('mode', v); close() }} options={MODE_OPTIONS} /></Sheet>}
-    </>
-  )
-}
-
 /** Piano shown or not: its own setting on web (default on) and on phone (default off). */
 export function usePiano(): [boolean, () => void] {
   const { piano, pianoM, set } = usePrefs()
@@ -413,14 +432,14 @@ export function Transport({ withPiano = false }: { withPiano?: boolean }) {
   const off = !score || instrumentLoading
   // Apple Music style: bare filled glyphs, no disc; a soft grey circle only while pressed (.tp:active).
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 28, height: 48, position: 'relative' }}>
-      <button type="button" className="tp" aria-label="Phrase précédente" onClick={prev} style={{ width: 44, height: 44 }}><Icon name="rewind" size={26} /></button>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18, height: 36, position: 'relative' }}>
+      <button type="button" className="tp" aria-label="Phrase précédente" onClick={prev} style={{ width: 32, height: 32, color: 'var(--text2)' }}><Icon name="rewind" size={18} /></button>
       <button type="button" className="tp" aria-label={isPlaying ? 'Pause' : 'Lecture'} disabled={off} onClick={isPlaying ? pause : play}
-        style={{ width: 52, height: 52, opacity: off ? 0.35 : 1 }}><Icon name={instrumentLoading ? 'more' : isPlaying ? 'pause' : 'play'} size={34} /></button>
-      <button type="button" className="tp" aria-label="Phrase suivante" onClick={next} style={{ width: 44, height: 44 }}><Icon name="fastForward" size={26} /></button>
+        style={{ width: 36, height: 36, opacity: off ? 0.35 : 1 }}><Icon name={instrumentLoading ? 'more' : isPlaying ? 'pause' : 'play'} size={24} /></button>
+      <button type="button" className="tp" aria-label="Phrase suivante" onClick={next} style={{ width: 32, height: 32, color: 'var(--text2)' }}><Icon name="fastForward" size={18} /></button>
       {withPiano && (
         <button type="button" className="tp" aria-label={piano ? 'Masquer le piano' : 'Afficher le piano'} aria-pressed={piano} onClick={togglePiano}
-          style={{ position: 'absolute', right: 0, width: 40, height: 40, color: piano ? 'var(--accent-ink)' : 'var(--text3)' }}><Icon name="piano" size={22} /></button>
+          style={{ position: 'absolute', right: 0, width: 32, height: 32, color: piano ? 'var(--accent-ink)' : 'var(--text3)' }}><Icon name="piano" size={18} /></button>
       )}
     </div>
   )
@@ -443,4 +462,13 @@ export function useLandscape(): boolean {
     cb => { const m = window.matchMedia(q); m.addEventListener('change', cb); return () => m.removeEventListener('change', cb) },
     () => window.matchMedia(q).matches,
   )
+}
+
+/** The main sound (sung style or instrument) as a single choice: current value, short label, setter. */
+export function useSoundChoice() {
+  const { sung, instrumentId, setSung, setInstrument } = usePlayer()
+  const value = sung ?? instrumentId
+  const short = sung ? (sung === 'recorded' ? 'Vraies voix' : SUNG_LABEL[sung]) : SHORT_SOUND[instrumentId] ?? INSTRUMENT_BY_ID[instrumentId]?.label ?? instrumentId
+  const pick = (v: string) => { if (isSung(v)) setSung(v); else setInstrument(v as InstrumentId) }
+  return { value, short, pick }
 }

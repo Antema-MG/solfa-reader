@@ -1,0 +1,51 @@
+Key: D
+Mesure: 4/4
+Titre: Fa zaza no teraka ho antsika (Isaia 9:5)
+Compositeur: Hanitra Raharisoa
+Tempo: 95 BPM
+
+// Transcrit depuis la partition photographiée (26 Octobre 2024). « Do dia D », Andante T: 95.
+// Le « ! » (demi-mesure) de l'original devient « : ».
+// Dans l'original, la dernière mesure d'une ligne continue sur la ligne suivante (avant la première barre).
+// Ici chaque mesure est écrite en entier dans son bloc : les temps 2-4 repris du début de la ligne suivante
+// sont placés à la fin du bloc précédent (leurs paroles aussi).
+// Simplifications de rythme (le format n'a que des temps entiers ou deux croches) :
+//   - point + double croche « a.,b » devient deux croches « a.b »
+//   - trois notes dans un temps « a.bc » devient « a.c » (la note de passage est omise)
+// Prélude (mesure 1) : les basses seules chantent « Fa za-za » (.s, puis l,.t,).
+// Au temps 1 de la mesure 16, seuls les ténors chantent « An-drian' ny » (mesures 15-16).
+// Structure : Prélude - Réf - And1 x2 - Interlude - Réf - And2 x2 - Interlude narratif - Réf x2
+// « D.S. » après la mesure 17 : retour au segno ($), sur la reprise ». d : r.m » qui finit la mesure 9.
+// Couplet 2 : Ma neho fahagagana / a-min'ny fiainantsika / Ma-nolo-tsaina / mi-aro sy mi-tantana ;
+//   Ma-mela heloka / Ma-mela heloka / Ma-nome fi-a-da-na-na (« Ma-he-ta-na » : à vérifier sur la partition).
+// Strophe finale : Ho teraka ao am-ponao anie Jesoa. Hanjaka eo amin'ny fiainanao anie Izy.
+//   Ho Tompo sy Mpamonjy anao, Haneho zava-mahagaga eo amin'ny fiainanao,
+//   Hanome saina hendry, hiaro, hitantantana, Hanavao anao Izy, Hanome anao fiadanana. Tia anao Jesoa
+
+// Phrase 1 — Réfrain : « Fa zaza no teraka ho antsika, Zazalahy no omena antsika » (+ début de la phrase 2)
+S. || 0 : 0 : 0 : 0 | s.s : -.s : l.s : d.r | m.m : - : - : 0 | s.s : -.s : l.l : -.s | s.r : - : .m : r.m ||
+A. || 0 : 0 : 0 : 0 | m.d : -.m : f.m : d.t, | d.d : - : - : 0 | m.m : -.m : f.m : -.d | t,.r : - : .m : r.d ||
+T. || 0 : 0 : 0 : 0 | d'.s : -.m : f.m : f.f | m.s : - : - : 0 | d'.d' : -.d' : d'.t : -.l | l.s : - : .s : f.m ||
+B. || 0 : 0 : .s, : l,.t, | 0 : .d : d.d : d.d | d.d : - : - : 0 | d.d : -.d : r.m : -.d | s,.s, : - : .s, : s,.s, ||
+W. za-za no te-ra-ka hoan-tsi-ka za-zalahy no o-me-na antsi-ka A-ry-ny
+
+// Phrase 2 — « A-ry ny fanapahana eo antsorony » (+ début du couplet : A-ry nya narany)
+S. || d : -.d : r.r : r.d | m : r : d.f : m.r | m.d : - : t,.r : -.m | -.d : 0 : .d : r.m ||
+A. || l, : -.l, : t,.t, : t,.l, | d : t, : l,.r : d.l, | d.s, : - : s,.t, : -.d | -.s, : 0 : .s, : s,.s, ||
+T. || f : -.f : f.f : f.f | l : s : f.l : s.f | s.m : - : r.f : -.s | -.m : 0 : .m : m.m ||
+B. || f, : -.f, : f,.f, : f,.f, | l, : s, : f,.f, : f,.f, | s,.s, : - : s,.s, : -.s, | -.d : 0 : .d : r.m ||
+W. fa-na pa-ha nae-oan tso ro ny-Ny fa-na pa-hana eo-antso ro ny A-ry-nya
+
+// Phrase 3 — Couplet (« $ ») : na-ra-ny a-ta-ohoe Mahagaga, Mpa-nolo-tsaina, An-dria ma-ni-tra Mahery
+S. || f.f : - : .f : m.r | m.m : - : -.m : r.d | r.r : -.r : m.r : d.r | m.m : - : .d : r.m ||
+A. || l,.l, : - : .l, : t,.d | d.s, : - : -.d : t,.l, | t,.t, : -.t, : d.t, : l,.t, | d.d : - : .d : d.d ||
+T. || f.l : - : .r : m.f | s.m : - : -.s : f.m | f.f : -.f : s.f : m.f | s : l : ta.d' : t.d' ||
+B. || f.f, : - : .f, : l,.t, | d.d : - : -.d : d.d | s,.s, : -.s, : s,.s, : s,.s, | d : r : m.m : r.d ||
+W. na rany a ta ohoe Ma hagaga Mpa no lo tsai na An dri a ma ni tra Mahery Rain' ny man
+
+// Phrase 4 — « Rain' ny mandrakizay ... Andrian' ny fiadanana » (D.S.)
+S. || f.l : - : .l : s.f | m.m : - : -. : 0 | 0 : .d : r.m : -.r | -.d : 0 : 0 : 0 ||
+A. || d.f : - : .f : m.r | m.d : - : -. : 0 | 0 : .d : t,.d : -.t, | -.s, : 0 : 0 : 0 ||
+T. || d'.l : - : .l : s.l | s.m : - : -.r : m.f | s : .m : f.s : -.f | -.m : 0 : 0 : 0 ||
+B. || f,.f, : - : .f, : f,.f, | l,.l, : - : -. : 0 | 0 : .s, : s,.s, : -.s, | -.d : 0 : 0 : 0 ||
+W. dra-kizay Rain' ny-man dra-kizay fi-a-da-na-na

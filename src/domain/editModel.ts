@@ -1,4 +1,4 @@
-import type { Score, Beat, Element, Voice, EditCell, EditSlot, EditModel } from '../types'
+import type { Score, Beat, Element, Voice, RenderBlock, EditCell, EditSlot, EditModel } from '../types'
 
 const VOICES: Voice[] = ['S', 'A', 'T', 'B']
 
@@ -10,27 +10,26 @@ function slotFromElement(el: Element): EditSlot {
 }
 
 /**
- * Collapse a parsed Beat (1–2 Elements) into a single EditCell.
- * Whole-beat note/tie/rest map directly; two half-beat elements become a `pair`.
- * Real .msolfa pairs always end in a note (`a.b`, `-.b`, `.b`); if a rare 2nd
- * element is not a note, we fall back to the first element as a whole-beat cell.
+ * Collapse a beat's Elements into a single EditCell: one element maps directly,
+ * 2–4 elements (equal subdivisions) become a `tuple` of as many slots.
  */
-function cellFromBeat(beat: Beat | undefined): EditCell {
-  const els = beat?.elements ?? []
+export function cellFromElements(els: Element[]): EditCell {
   if (els.length >= 2) {
-    const b = els[1]
-    if (b.kind === 'note') {
-      return { kind: 'pair', a: slotFromElement(els[0]), b: { kind: 'note', degree: b.degree, chromatic: b.chromatic, octave: b.octave } }
-    }
-    // 2nd slot is not a note → keep only the first element's value.
-    const a = slotFromElement(els[0])
-    return a // EditSlot is a subset of EditCell (note/tie/rest)
+    const slots = els.slice(0, 4).map(slotFromElement)
+    const uneven = els.some(e => Math.abs(e.dur - els[0].dur) > 1e-9)
+    return uneven ? { kind: 'tuple', slots, durs: els.slice(0, 4).map(e => e.dur) } : { kind: 'tuple', slots }
   }
   const e = els[0]
-  if (!e) return { kind: 'rest' }
-  if (e.kind === 'note') return { kind: 'note', degree: e.degree, chromatic: e.chromatic, octave: e.octave }
-  if (e.kind === 'tie')  return { kind: 'tie' }
-  return { kind: 'rest' }
+  return e ? slotFromElement(e) : { kind: 'rest' }
+}
+
+function cellFromBeat(beat: Beat | undefined): EditCell {
+  return cellFromElements(beat?.elements ?? [])
+}
+
+/** Soprano lyrics of a block, as space-separated syllables ('' = none). */
+function blockLyrics(block: RenderBlock): string {
+  return block.measures.flatMap(m => m.beats.S.map(b => b.lyric ?? '')).filter(Boolean).join(' ')
 }
 
 /**
@@ -45,6 +44,7 @@ export function scoreToEditModel(score: Score): EditModel {
     numerator: num,
     blocks: score.renderBlocks.map(block => ({
       comment: block.comment,
+      lyrics: blockLyrics(block),
       measures: block.measures.map(measure => {
         const beats = {} as Record<Voice, EditCell[]>
         VOICES.forEach(v => {

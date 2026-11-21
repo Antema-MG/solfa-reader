@@ -85,6 +85,12 @@ En `4/4` → exactement **4 temps**, **3 deux-points** :
 | Silence | `0` ou `_` | 1.0 |
 | Note pointée | `d.` | 1.0 (0.5 + 0.5 tenu) |
 | Deux croches | `s.f` | 1.0 (0.5 + 0.5) |
+| Trois ou quatre parts égales | `s.f.m` / `s.f.m.r` | 1.0 (triolet / 4 doubles croches) |
+| Demi-temps puis deux quarts | `m.(r.d)` | 1.0 (0.5 + 0.25 + 0.25) |
+| Deux quarts puis demi-temps | `(t,.d).r` | 1.0 (0.25 + 0.25 + 0.5) |
+| Croche pointée + double croche | `s.(-.s)` | 1.0 (s tenu 0.75, puis s 0.25) |
+
+Dans une paire `(a.b)`, chaque case est une note, `-` (tenu) ou `0` (silence). La notation classique `m . rd` (quarts collés) s'écrit `m.(r.d)` ; `s .,s` ou `s . - , s` s'écrit `s.(-.s)`. Une paire entre parenthèses doit toujours être accompagnée de l'autre moitié du temps (`(r.d)` seul est invalide).
 
 ---
 

@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { editModelToText } from './domain/serialize'
+import { catalogPathFor, normalizedText } from './domain/catalogFiles'
 import { PlayerProvider, usePlayer } from './state/PlayerContext'
 import { EditorProvider, useEditor } from './state/EditorContext'
 import { PrefsProvider, usePrefs } from './state/PrefsContext'
@@ -7,9 +8,12 @@ import { LibraryProvider, useLibrary, newId } from './state/LibraryContext'
 import GuidedEditor, { type Draft } from './components/Editor/GuidedEditor'
 import MethodView    from './components/Learn/MethodView'
 import CatalogView   from './components/Catalog/CatalogView'
+import MiniBar       from './components/Shell/MiniBar'
+import LandscapeChoir from './components/Shell/LandscapeChoir'
 import { useLandscape, useWide } from './components/Shell/ui'
-import { ScorePane } from './components/Shell/Landscape'
-import { ChoirPanel, ChoirView, ListenView, ScoreScreen, useListenMode, useMySound } from './components/Shell/Views'
+import RecordChoir from './components/Choir/RecordChoir'
+import { LandscapePlayer } from './components/Shell/LandscapePlayer'
+import { ChoirPanel, ChoirView, ListenView, ScoreScreen, useMySound } from './components/Shell/Views'
 
 const DEGREE_KEYS = new Set(['d', 'r', 'm', 'f', 's', 'l', 't'])
 
@@ -28,12 +32,12 @@ function BottomNav({ view, setView }: { view: View; setView: (v: View) => void }
   return (
     <nav aria-label="Navigation" style={{
       flex: 'none', display: 'grid', gridTemplateColumns: `repeat(${TABS.length}, minmax(0, 1fr))`,
-      padding: '6px 6px max(8px, env(safe-area-inset-bottom))', background: 'var(--bg2)', borderTop: '1px solid var(--border)',
+      padding: '8px 8px max(28px, env(safe-area-inset-bottom))', background: 'rgba(249,249,251,0.96)', borderTop: '1px solid #E5E5EA',
     }}>
       {TABS.map(t => (
         <button key={t.id} type="button" aria-current={active === t.id ? 'page' : undefined} onClick={() => setView(t.id)} style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, minHeight: 48, border: 'none', background: 'transparent',
-          color: active === t.id ? 'var(--accent-ink)' : 'var(--text2)', fontSize: 10, fontWeight: active === t.id ? 700 : 500,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, minHeight: 46, border: 'none', background: 'transparent',
+          color: active === t.id ? '#85632A' : '#6E6E73', fontSize: 10, fontWeight: active === t.id ? 600 : 500,
         }}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={t.icon} /></svg>
           {t.label}
@@ -46,14 +50,32 @@ function BottomNav({ view, setView }: { view: View; setView: (v: View) => void }
 /** Global behaviours: drag & drop, space = play/pause, edit-mode keys, listen mode. */
 function GlobalBehaviours({ onOpened }: { onOpened: () => void }) {
   const { score, isPlaying, play, pause, openFile } = usePlayer()
-  const { isEditing, move, apply, exit, model, docId } = useEditor()
+  const { isEditing, move, apply, exit, model, docId, adopt } = useEditor()
   const lib = useLibrary()
-  // A score created in the app is saved to the library on every edit: nothing to lose.
+  // Every edit is saved to the library (this device), whatever the score came from.
+  // A score already in the library is updated in place; a catalog / dropped / default
+  // score gets its own copy on the first real change (not just for opening the editor).
+  const entry = useRef<string | null>(null)
+  const origin = useRef<string | undefined>(undefined)
   useEffect(() => {
-    if (docId && model) lib.save({ id: docId, name: model.meta.title || 'Nouvelle partition', text: editModelToText(model) })
+    if (!isEditing || !model) { entry.current = null; origin.current = undefined; return }
+    const text = editModelToText(model)
+    if (entry.current === null) { entry.current = text; return }
+    if (docId || text === entry.current) return
+    const hit = lib.items.find(i => normalizedText(i.text) === entry.current)
+    // Came from a bundled catalog file: the copy takes its place (same file in dev, hides the original).
+    origin.current = hit ? undefined : catalogPathFor(entry.current) ?? undefined
+    adopt(hit?.id ?? newId(model.meta.title || 'partition'))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [model, isEditing, docId])
+  useEffect(() => {
+    if (!docId || !model) return
+    const old = lib.items.find(i => i.id === docId)
+    const text = editModelToText(model)
+    if (old?.text === text) return                       // nothing changed: keep its place in the list
+    lib.save({ id: docId, name: model.meta.title || old?.name || 'Nouvelle partition', text, origin: old?.origin ?? origin.current })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [model, docId])
-  useListenMode()
   useMySound()
 
   useEffect(() => {
@@ -96,8 +118,10 @@ function GlobalBehaviours({ onOpened }: { onOpened: () => void }) {
       }
       if (e.key === '1') { e.preventDefault(); apply({ type: 'rhythm', value: 'note' }) }
       else if (e.key === '2') { e.preventDefault(); apply({ type: 'rhythm', value: 'pair' }) }
-      else if (e.key === '3') { e.preventDefault(); apply({ type: 'rhythm', value: 'tie' }) }
-      else if (e.key === '4') { e.preventDefault(); apply({ type: 'rhythm', value: 'rest' }) }
+      else if (e.key === '3') { e.preventDefault(); apply({ type: 'rhythm', value: 'triple' }) }
+      else if (e.key === '4') { e.preventDefault(); apply({ type: 'rhythm', value: 'quad' }) }
+      else if (e.key === '5') { e.preventDefault(); apply({ type: 'rhythm', value: 'tie' }) }
+      else if (e.key === '6') { e.preventDefault(); apply({ type: 'rhythm', value: 'rest' }) }
       else {
         // Note letters: plain = natural · Shift = sharp (Maj+D → di) · Ctrl or Alt = flat (Ctrl+D → da).
         // Alt is there because Ctrl+T (si bémol) is reserved by browsers. e.code covers macOS, where ⌥D types ∂.
@@ -131,29 +155,30 @@ function LandscapeRoot() {
   const { editNew } = useEditor()
   const lib = useLibrary()
   const [draft, setDraft] = useState<Draft | null>(null)
+  const [recording, setRecording] = useState(false)
   const active = view === 'editor' ? 'library' : view
   return (
     <div style={{ display: 'flex', height: '100dvh', background: 'var(--bg)' }}>
       <GlobalBehaviours onOpened={() => setView('listen')} />
       <nav aria-label="Navigation" style={{
-        flex: 'none', width: 'calc(56px + env(safe-area-inset-left))', boxSizing: 'border-box', paddingLeft: 'env(safe-area-inset-left)',
-        display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2, background: 'var(--bg2)', borderRight: '1px solid var(--border)',
+        flex: 'none', width: 'calc(64px + env(safe-area-inset-left))', boxSizing: 'border-box', padding: '6px 0', paddingLeft: 'env(safe-area-inset-left)',
+        display: 'flex', flexDirection: 'column', justifyContent: 'center', background: 'rgba(249,249,251,0.96)', borderRight: '1px solid #E5E5EA',
       }}>
         {TABS.map(t => (
           <button key={t.id} type="button" aria-label={t.label} title={t.label} aria-current={active === t.id ? 'page' : undefined} onClick={() => setView(t.id)} style={{
-            height: 52, border: 'none', background: active === t.id ? 'var(--cur)' : 'transparent',
-            color: active === t.id ? 'var(--accent-ink)' : 'var(--text2)', display: 'grid', placeItems: 'center',
+            height: 62, border: 'none', background: 'transparent', color: active === t.id ? '#85632A' : '#6E6E73', fontSize: 10, fontWeight: active === t.id ? 600 : 500,
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3,
           }}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={t.icon} /></svg>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={t.icon} /></svg>{t.label}
           </button>
         ))}
       </nav>
       <main style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column', paddingRight: 'env(safe-area-inset-right)' }}>
-        {view === 'library' && <CatalogView onOpen={text => { openFile(text); setView('listen') }} onFix={d => { setDraft(d); setView('editor') }}
+        {view === 'library' && <CatalogView landscape onOpen={text => { openFile(text); setView('listen') }} onRead={text => { openFile(text); setView('score') }} onFix={d => { setDraft(d); setView('editor') }}
           onCreate={(text, id) => { openFile(text); editNew(id); setView('score') }} />}
-        {view === 'listen' && <ScorePane withPiano />}
-        {view === 'score' && <ScorePane withPiano={false} />}
-        {view === 'choir' && <ChoirPanel />}
+        {view === 'listen' && <LandscapePlayer withPiano onRecord={() => setRecording(true)} />}
+        {view === 'score' && <LandscapePlayer withPiano={false} />}
+        {view === 'choir' && <LandscapeChoir onRecord={() => setRecording(true)} />}
         {view === 'learn' && <MethodView />}
         {view === 'editor' && draft && (
           <GuidedEditor key={draft.id ?? draft.name} draft={draft} onCancel={() => setView('library')} onSave={(d, text) => {
@@ -162,6 +187,7 @@ function LandscapeRoot() {
           }} />
         )}
       </main>
+      {recording && <RecordChoir onClose={() => setRecording(false)} />}
     </div>
   )
 }
@@ -192,72 +218,76 @@ function DesktopRoot() {
   }, [panel, library, set])
   const [current, setCurrent] = useState<string>()
   const open = (text: string) => { openFile(text); setCurrent(text); if (view === 'editor' || view === 'learn') setView('listen') }
-  const col: React.CSSProperties = { display: 'flex', flexDirection: 'column', minHeight: 0, minWidth: 0, background: 'var(--bg)' }
+  const col: React.CSSProperties = { display: 'flex', flexDirection: 'column', minHeight: 0, minWidth: 0 }
+  const card: React.CSSProperties = { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: '#FFFFFF', borderRadius: 18, overflow: 'hidden' }
+  const iconBtn = (on: boolean): React.CSSProperties => ({ width: 36, height: 36, borderRadius: 8, border: 'none', display: 'grid', placeItems: 'center', background: on ? '#E8E8ED' : 'transparent', color: '#1D1D1F' })
+  const importRef = useRef<HTMLInputElement>(null)
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', background: 'var(--bg)' }}>
       <GlobalBehaviours onOpened={() => setView('listen')} />
-      <header style={{ flex: 'none', height: 56, padding: '0 20px', display: 'flex', alignItems: 'center', gap: 18, background: 'var(--bg2)', borderBottom: '1px solid var(--border)' }}>
-        <button type="button" onClick={toggleLibrary} aria-pressed={library} aria-controls="library-panel"
+      <header style={{ flex: 'none', height: 56, padding: '0 20px', display: 'flex', alignItems: 'center', gap: 16, background: 'rgba(255,255,255,0.9)', borderBottom: '1px solid #E5E5EA' }}>
+        <button type="button" onClick={toggleLibrary} aria-pressed={library} aria-controls="library-panel" style={{ ...iconBtn(library), marginLeft: -8 }}
           aria-label={library ? 'Masquer la bibliothèque (Ctrl+Alt+B)' : 'Afficher la bibliothèque (Ctrl+Alt+B)'}
-          title={library ? 'Masquer la bibliothèque (Ctrl+Alt+B)' : 'Afficher la bibliothèque (Ctrl+Alt+B)'} style={{
-            width: 36, height: 36, marginLeft: -8, borderRadius: 8, border: 'none', display: 'grid', placeItems: 'center',
-            background: library ? 'var(--bg4)' : 'transparent', color: 'var(--text)',
-          }}>
+          title={library ? 'Masquer la bibliothèque (Ctrl+Alt+B)' : 'Afficher la bibliothèque (Ctrl+Alt+B)'}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <rect x="3" y="4" width="18" height="16" rx="2" /><path d="M9 4v16" />{library && <path d="M6.5 9v6" />}
           </svg>
         </button>
-        <b style={{ fontSize: 18, fontWeight: 800 }}>Msolfa</b>
-        <nav aria-label="Navigation" style={{ display: 'flex', padding: 2, borderRadius: 10, background: 'var(--bg4)' }}>
+        <span style={{ fontSize: 17, fontWeight: 800 }}>Msolfa</span>
+        <nav aria-label="Navigation" style={{ display: 'flex', padding: 2, borderRadius: 10, background: '#E8E8ED' }}>
           {DESKTOP_TABS.map(t => (
             <button key={t.id} type="button" aria-current={active === t.id ? 'page' : undefined} onClick={() => setView(t.id)} style={{
-              height: 32, padding: '0 16px', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: active === t.id ? 700 : 500,
-              background: active === t.id ? 'var(--bg2)' : 'transparent', color: 'var(--text)',
-              boxShadow: active === t.id ? '0 1px 3px rgba(0,0,0,.12)' : undefined,
+              height: 30, padding: '0 14px', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: active === t.id ? 600 : 500,
+              background: active === t.id ? '#FFFFFF' : 'transparent', color: active === t.id ? '#1D1D1F' : '#3A3A3C',
+              boxShadow: active === t.id ? '0 1px 3px rgba(0,0,0,0.1)' : undefined,
             }}>{t.label}</button>
           ))}
         </nav>
         <span style={{ flex: 1 }} />
-        <span style={{ fontSize: 12, color: 'var(--text2)' }}>Espace : lecture / pause · Ctrl+Alt+B : bibliothèque · Ctrl+B : options</span>
+        <input ref={importRef} type="file" accept=".msolfa,.txt,text/plain" hidden onChange={async e => {
+          const f = e.target.files?.[0]; if (f) { openFile(await f.text()); setView('listen') }; e.target.value = ''
+        }} />
+        <button type="button" onClick={() => importRef.current?.click()} style={{ height: 34, padding: '0 14px', borderRadius: 17, border: 'none', background: '#1D1D1F', color: '#FFFFFF', fontSize: 13, fontWeight: 600 }}>Importer .msolfa</button>
         {hasSide && (
-          <button type="button" onClick={togglePanel} aria-pressed={panel} aria-controls="choir-panel"
-            aria-label={panel ? 'Masquer les options (Ctrl+B)' : 'Afficher les options (Ctrl+B)'} title={panel ? 'Masquer les options (Ctrl+B)' : 'Afficher les options (Ctrl+B)'} style={{
-              width: 36, height: 36, borderRadius: 8, border: 'none', display: 'grid', placeItems: 'center',
-              background: panel ? 'var(--bg4)' : 'transparent', color: 'var(--text)',
-            }}>
+          <button type="button" onClick={togglePanel} aria-pressed={panel} aria-controls="choir-panel" style={iconBtn(panel)}
+            aria-label={panel ? 'Masquer les options (Ctrl+B)' : 'Afficher les options (Ctrl+B)'} title={panel ? 'Masquer les options (Ctrl+B)' : 'Afficher les options (Ctrl+B)'}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <rect x="3" y="4" width="18" height="16" rx="2" /><path d="M15 4v16" />{panel && <path d="M17.5 9v6" />}
             </svg>
           </button>
         )}
       </header>
-      {/* The column slides closed (width → 0) rather than unmounting, so it reopens instantly. */}
+      {/* Floating white cards on the grey ground (16px gaps). A closed column slides to 0 — gap included — so it reopens instantly. */}
       <div style={{
-        flex: 1, minHeight: 0, display: 'grid', gap: 1, background: 'var(--border)', transition: 'grid-template-columns .2s ease',
-        gridTemplateColumns: `${library ? 280 : 0}px minmax(0, 1fr)${hasSide ? ` ${showSide ? 300 : 0}px` : ''}`,
+        flex: 1, minHeight: 0, display: 'grid', padding: '16px 0 16px 16px', transition: 'grid-template-columns .2s ease',
+        gridTemplateColumns: `${library ? 296 : 0}px minmax(0, 1fr)${hasSide ? ` ${showSide ? 316 : 0}px` : ''}`,
       }}>
-        <aside id="library-panel" aria-label="Bibliothèque" aria-hidden={!library} {...({ inert: library ? undefined : '' } as object)}
-          style={{ ...col, overflow: 'hidden' }}>
+        <aside id="library-panel" aria-label="Bibliothèque" aria-hidden={!library} {...({ inert: library ? undefined : '' } as object)} style={{ ...col, overflow: 'hidden' }}>
           <div style={{ width: 280, flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-            <CatalogView compact activeText={score ? current : undefined} onOpen={open} onFix={d => { setDraft(d); setView('editor') }}
-              onCreate={(text, id) => { openFile(text); setCurrent(text); editNew(id); setView('score') }} />
+            <div style={card}>
+              <CatalogView compact activeText={score ? current : undefined} onOpen={open} onFix={d => { setDraft(d); setView('editor') }}
+                onCreate={(text, id) => { openFile(text); setCurrent(text); editNew(id); setView('score') }} />
+            </div>
           </div>
         </aside>
-        <main style={col}>
-          {view === 'listen' && <ListenView />}
-          {view === 'score' && <ScoreScreen />}
-          {view === 'learn' && <MethodView />}
-          {view === 'editor' && draft && (
-            <GuidedEditor key={draft.id ?? draft.name} draft={draft} onCancel={() => setView('listen')} onSave={(d, text) => {
-              lib.save({ id: d.id ?? newId(d.name), name: d.name, text, origin: d.origin })
-              openFile(text); setView('listen')
-            }} />
-          )}
+        <main style={{ ...col, paddingRight: hasSide && showSide ? 0 : 16 }}>
+          <div style={{ ...col, flex: 1, paddingRight: hasSide && showSide ? 16 : 0 }}>
+            {view === 'listen' && <ListenView />}
+            {view === 'score' && <ScoreScreen />}
+            {view === 'learn' && <MethodView />}
+            {view === 'editor' && draft && (
+              <GuidedEditor key={draft.id ?? draft.name} draft={draft} onCancel={() => setView('listen')} onSave={(d, text) => {
+                lib.save({ id: d.id ?? newId(d.name), name: d.name, text, origin: d.origin })
+                openFile(text); setView('listen')
+              }} />
+            )}
+          </div>
         </main>
         {hasSide && (
-          <aside id="choir-panel" aria-label="Chorale" aria-hidden={!showSide} {...({ inert: showSide ? undefined : '' } as object) /* React 18 types lack `inert`: hidden column can't take focus */}
-            style={{ ...col, background: 'var(--bg)', overflow: 'hidden' }}>
-            <div style={{ width: 300, flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}><ChoirPanel /></div>
+          <aside id="choir-panel" aria-label="Chorale" aria-hidden={!showSide} {...({ inert: showSide ? undefined : '' } as object)} style={{ ...col, overflow: 'hidden' }}>
+            <div style={{ width: 300, flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', paddingRight: 16 }}>
+              <div style={{ ...card, flex: 'none', maxHeight: '100%' }}><ChoirPanel /></div>
+            </div>
           </aside>
         )}
       </div>
@@ -321,10 +351,11 @@ function MobileRoot() {
           }} />
         )}
         {view === 'listen'  && <ListenView goLibrary={goLibrary} back={back} />}
-        {view === 'score'   && <ScoreScreen goLibrary={goLibrary} back={back} />}
+        {view === 'score'   && <ScoreScreen goLibrary={goLibrary} goListen={goListen} back={back} />}
         {view === 'choir'   && <ChoirView goLibrary={goLibrary} back={back} />}
         {view === 'learn'   && <MethodView />}
       </main>
+      {view === 'library' && <MiniBar onOpen={goListen} />}
       <BottomNav view={view} setView={setView} />
     </div>
   )
