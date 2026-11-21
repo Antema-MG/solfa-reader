@@ -315,7 +315,10 @@ export default function CatalogView({ onOpen, onRead, onFix, onCreate, compact =
   return (
     <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 'max(58px, calc(env(safe-area-inset-top) + 14px)) 20px 16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
       <div style={{ flex: 'none', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-        <h1 style={{ margin: 0, fontSize: 34, fontWeight: 800, letterSpacing: '-0.02em' }}>Bibliothèque</h1>
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', color: ACCENT }}>Antema Fi</div>
+          <h1 style={{ margin: 0, fontSize: 34, fontWeight: 800, letterSpacing: '-0.02em' }}>Bibliothèque</h1>
+        </div>
         <button type="button" aria-label="Ajouter une partition" aria-haspopup="menu" aria-expanded={!!adding} onClick={e => setAdding(e.currentTarget.getBoundingClientRect())}
           style={{ width: 44, height: 44, borderRadius: 22, border: 'none', background: INK, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>

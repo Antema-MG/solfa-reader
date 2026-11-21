@@ -1,11 +1,10 @@
-import { useState } from 'react'
 import { usePlayer } from '../../state/PlayerContext'
 import { SoundBar, VoiceMixBar } from './SoundBar'
-import { TONICS } from '../../domain/pitch'
+import { ReadBar, ReadToggle } from './ReadingView'
 import PhraseList from '../Score/PhraseList'
 import {
-  ACCENT, CUR, ClefsIcon, DisplayMenu, INK, KeyPill, PianoStrip, PickerSheet, SpeakerIcon, TEXT2, TempoPill, TopProgress, TransportRow,
-  tonicName, usePianoPref, useTonicLabel, type PickOpt,
+  ACCENT, CUR, DisplayMenu, INK, KeyPill, PianoStrip, TEXT2, TempoPill, TopProgress, TransportRow,
+  usePianoPref,
 } from './controls'
 import type { Voice } from '../../types'
 import type { Back } from './Views'
@@ -25,26 +24,11 @@ function useHeaderText() {
   }
 }
 
-type Pick = null | 'tempo' | 'ton'
-
-/** Phone portrait: header · voice chips · phrases · [chips · piano · progress · transport]. */
+/** Phone portrait: header · phrases · [settings icons · piano · progress · transport]. */
 export function PhoneListen({ goLibrary, back }: { goLibrary?: () => void; back?: Back }) {
-  const { tempo, setTempo, tonic, setTonic, score, playKey, playClefs } = usePlayer()
+  const { score } = usePlayer()
   const { title, sub } = useHeaderText()
   const [piano, togglePiano] = usePianoPref('phone')
-  const tonLabel = useTonicLabel()
-  const [pick, setPick] = useState<Pick>(null)
-  const close = () => setPick(null)
-  const orig = score?.metadata.tempo
-  const tempos = [...new Set([60, 70, 80, 90, 100, 110, tempo, ...(orig ? [orig] : [])])].sort((a, b) => a - b)
-
-  const sheet = (() => {
-    if (pick === 'tempo') return { title: 'TEMPO', opts: tempos.map<PickOpt>(t => ({ value: String(t), label: `${t} BPM${t === orig ? ' · original' : ''}`, on: t === tempo })), act: (v: string) => setTempo(+v) }
-    if (pick === 'ton') return { title: 'TONIQUE (do =)', opts: TONICS.map<PickOpt>(([k, l]) => ({ value: k, label: tonicName(l) + (k === score?.metadata.key ? ' · original' : ''), on: k === tonic })), act: (v: string) => { setTonic(v); window.setTimeout(playKey, 30) } }
-    return null
-  })()
-
-  const chip = { flex: 1, minWidth: 0, height: 30, border: 'none', borderRadius: 15, background: '#F5F5F7', fontSize: 12, fontWeight: 600, color: INK, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } as const
   return (
     <>
       <header style={{ flex: 'none', padding: 'calc(env(safe-area-inset-top) + 10px) 12px 6px', display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -57,37 +41,17 @@ export function PhoneListen({ goLibrary, back }: { goLibrary?: () => void; back?
           <span style={{ fontSize: 15, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{title}</span>
           <span style={{ fontSize: 12, color: TEXT2 }}>{sub}</span>
         </div>
-        <DisplayMenu piano={piano} togglePiano={togglePiano} />
+        <ReadToggle /><DisplayMenu piano={piano} togglePiano={togglePiano} />
       </header>
-      <VoiceMixBar />
       {!score
         ? <div style={{ flex: 1, display: 'grid', placeItems: 'center', textAlign: 'center', padding: 24, color: TEXT2 }}>
             <div><p style={{ marginBottom: 12 }}>Aucune partition ouverte.</p>
               {goLibrary && <button type="button" onClick={goLibrary} style={{ height: 40, padding: '0 20px', border: 'none', borderRadius: 20, background: INK, color: '#fff', fontSize: 13, fontWeight: 700 }}>Ouvrir la bibliothèque</button>}</div>
           </div>
         : <PhraseList />}
-      <section style={{ position: 'relative', flex: 'none', padding: '8px 14px 6px', background: '#FFFFFF', borderTop: '1px solid #E5E5EA', display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <SoundBar />
-        <div aria-label="Réglages de lecture" style={{ display: 'flex', gap: 6 }}>
-          <button type="button" onClick={() => setPick('tempo')} style={chip}>{tempo} BPM</button>
-          <button type="button" onClick={() => setPick('ton')} style={{ ...chip, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}><SpeakerIcon size={13} /><span>do = {tonLabel}</span></button>
-        </div>
-        {piano && <PianoStrip height={86} zoom={0.62} />}
-        <TopProgress />
-        <TransportRow piano={piano} togglePiano={togglePiano} />
-      </section>
-      {sheet && (
-        <PickerSheet title={sheet.title} options={sheet.opts} onClose={close} onPick={v => { sheet.act(v); close() }}
-          top={pick === 'ton' ? (
-            <div style={{ display: 'flex', gap: 8, margin: '2px 0 8px' }}>
-              <button type="button" onClick={playKey} style={{ flex: 1, height: 44, border: 'none', borderRadius: 12, background: INK, color: '#fff', fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                <SpeakerIcon size={16} on /><span>Le do · {tonLabel}</span>
-              </button>
-              <button type="button" onClick={playClefs} style={{ flex: 1, height: 44, border: 'none', borderRadius: 12, background: '#F2F2F7', color: INK, fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                <ClefsIcon size={18} /><span>Les clés</span>
-              </button>
-            </div>) : undefined} />
-      )}
+      <div style={{ position: 'relative', flex: 'none' }}><TopProgress /></div>
+      {piano && <div style={{ flex: 'none', padding: '6px 10px 0', background: '#FFFFFF' }}><PianoStrip height={86} zoom={0.62} /></div>}
+      <ReadBar play />
     </>
   )
 }

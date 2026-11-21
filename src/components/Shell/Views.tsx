@@ -13,8 +13,7 @@ import { loadTakes } from '../../services/recordedChoir'
 import { DesktopListen, PhoneListen } from './Listen'
 import PartitionPhone from './PartitionPhone'
 import { VCOLOR } from './controls'
-import { SoundBar, VoiceMixBar } from './SoundBar'
-import { useVoiceMix } from '../../hooks/useVoiceMix'
+import { ReadBar } from './ReadingView'
 import { SUNG_STYLES } from '../../domain/choir'
 import { INSTRUMENT_BY_ID } from '../../types/music'
 import { INSTRUMENTS as INSTRUMENT_CHOICES, SHORT_SOUND } from './ui'
@@ -192,7 +191,6 @@ function WebChoirPanel() {
 
 export function ChoirPanel() {
   const { myVoice, mySound, set } = usePrefs()
-  const mix = useVoiceMix()
   const desktop = useDesktop()
   if (desktop) return <WebChoirPanel />
   return (
@@ -209,14 +207,6 @@ export function ChoirPanel() {
               ))}
             </div>
           </div>
-          <div className="ios-row stack">
-            <span>Qui chante</span>
-            <div role="radiogroup" aria-label="Qui chante" className="ios-seg">
-              {mix.presets.map(p => (
-                <button key={p.id} type="button" role="radio" aria-checked={p.active} onClick={p.apply}>{p.label}</button>
-              ))}
-            </div>
-          </div>
           {desktop
             ? <Combo row label="Son de ma voix" value={mySound} onPick={v => set('mySound', v as MySound)} options={SOUNDS.map(o => ({ value: o.value, label: o.label }))} />
             : <label className="ios-row">
@@ -230,16 +220,6 @@ export function ChoirPanel() {
 
       <SoundPicker effectsOnly />
 
-      <section aria-label="Son">
-        <div className="ios-caption">Son</div>
-        <SoundBar />
-      </section>
-
-      <section aria-label="Pupitres">
-        <div className="ios-caption">Pupitres actifs</div>
-        <VoiceMixBar padding="0" />
-      </section>
-
     </div>
   )
 }
@@ -252,9 +232,7 @@ export function ChoirView({ goLibrary, back }: { goLibrary?: () => void; back?: 
     <>
       <Header title="Répétition" sub={`${title} · ${NAME[myVoice]}`} back={back} />
       <ChoirPanel />
-      <div style={{ flex: 'none', padding: '4px 16px 6px', background: 'var(--bg2)', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <Progress /><Transport />
-      </div>
+      <ReadBar play />
     </>
   )
 }

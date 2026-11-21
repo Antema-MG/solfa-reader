@@ -291,7 +291,7 @@ export function usePianoPref(kind: 'web' | 'phone' | 'landscape'): [boolean, () 
 
 /** Loop · prev · play · next · piano — row used under the score (portrait + web). */
 export function TransportRow({ piano, togglePiano, big = true }: { piano: boolean; togglePiano: () => void; big?: boolean }) {
-  const { score, isPlaying, play, pause, currentBeat, seekTo, instrumentLoading, loop, toggleLoop, playClefs } = usePlayer()
+  const { score, isPlaying, play, pause, currentBeat, seekTo, instrumentLoading, loop, toggleLoop } = usePlayer()
   const starts = score?.renderBlocks.map(b => b.measures[0].startBeat) ?? []
   const prev = () => seekTo([...starts].reverse().find(s => s < currentBeat - 1) ?? 0)
   const next = () => { const s = starts.find(x => x > currentBeat); if (s != null) seekTo(s) }
@@ -302,7 +302,6 @@ export function TransportRow({ piano, togglePiano, big = true }: { piano: boolea
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
       <button type="button" aria-label="Boucler la phrase" aria-pressed={loop} onClick={toggleLoop} style={circle(loop, CUR, ACCENT)}><LoopIcon /></button>
-      <button type="button" aria-label="Entendre les clés : S, A, T, B puis ensemble" title="Les clés : S · A · T · B puis ensemble" disabled={!score} onClick={playClefs} style={circle(false)}><ClefsIcon /></button>
       <button type="button" aria-label="Phrase précédente" onClick={prev} style={bare}><PrevIcon /></button>
       <button type="button" aria-label={isPlaying ? 'Pause' : 'Lecture'} disabled={off} onClick={isPlaying ? pause : play}
         style={{ width: 50, height: 50, borderRadius: 25, border: 'none', background: INK, color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none', opacity: off ? 0.35 : 1 }}>

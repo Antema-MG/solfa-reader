@@ -4,7 +4,7 @@ import { INSTRUMENT_BY_ID, type InstrumentId } from '../types/music'
 import { INSTRUMENTS, SHORT_SOUND } from '../domain/sounds'
 
 // Last sound of each family, so Voix ⇄ Instrument comes back to what you had.
-const memo: { voice: SungStyle; inst: InstrumentId } = { voice: 'recorded', inst: 'church_organ' }
+const memo: { voice: SungStyle; inst: InstrumentId } = { voice: 'solfege', inst: 'church_organ' }
 
 export const soundLabel = (id: string) => (isSung(id) ? SUNG_LABEL[id] : SHORT_SOUND[id as InstrumentId] ?? INSTRUMENT_BY_ID[id as InstrumentId]?.label ?? id)
 

@@ -133,30 +133,30 @@ export function TransportBar() {
   const starts = score.renderBlocks.map(b => b.measures[0].startBeat)
   const prev = () => seekTo([...starts].reverse().find(s => s < currentBeat - 1) ?? 0)
   const next = () => { const s = starts.find(x => x > currentBeat); if (s != null) seekTo(s) }
-  const bare: CSSProperties = { flex: 'none', width: 40, height: 40, border: 'none', background: 'transparent', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center' }
+  const bare: CSSProperties = { flex: 'none', width: 28, height: 28, border: 'none', background: 'transparent', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center' }
   return (
-    <div style={{ flex: 'none', height: 52, boxSizing: 'border-box', padding: '4px 10px 6px' }}>
-      <div style={{ height: 42, borderRadius: 14, background: INK, color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: 2, padding: '0 12px 0 4px' }}>
-        <button type="button" aria-label="Phrase précédente" onClick={prev} style={bare}><PrevIcon size={18} /></button>
+    <div style={{ flex: 'none', height: 34, boxSizing: 'border-box', padding: '2px 10px 4px' }}>
+      <div style={{ height: 28, borderRadius: 10, background: INK, color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: 0, padding: '0 10px 0 2px' }}>
+        <button type="button" aria-label="Phrase précédente" onClick={prev} style={bare}><PrevIcon size={14} /></button>
         <button type="button" aria-label={isPlaying ? 'Pause' : 'Lecture'} disabled={instrumentLoading} onClick={isPlaying ? pause : play}
-          style={{ flex: 'none', width: 38, height: 38, borderRadius: 19, border: 'none', background: '#FFFFFF', color: INK, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: instrumentLoading ? 0.4 : 1 }}>
-          {isPlaying ? <PauseIcon size={18} /> : <PlayIcon size={18} />}
+          style={{ flex: 'none', width: 24, height: 24, borderRadius: 12, border: 'none', background: '#FFFFFF', color: INK, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: instrumentLoading ? 0.4 : 1 }}>
+          {isPlaying ? <PauseIcon size={13} /> : <PlayIcon size={13} />}
         </button>
-        <button type="button" aria-label="Phrase suivante" onClick={next} style={bare}><NextIcon size={18} /></button>
-        <button type="button" aria-label="Entendre les clés : S, A, T, B puis ensemble" title="Les clés : S · A · T · B puis ensemble" onClick={playClefs} style={bare}><ClefsIcon size={18} /></button>
-        <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', padding: '0 10px 0 6px' }}>
+        <button type="button" aria-label="Phrase suivante" onClick={next} style={bare}><NextIcon size={14} /></button>
+        <button type="button" aria-label="Entendre les clés : S, A, T, B puis ensemble" title="Les clés : S · A · T · B puis ensemble" onClick={playClefs} style={bare}><ClefsIcon size={15} /></button>
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', padding: '0 8px 0 4px' }}>
           {items.map(t => {
             const now = currentBeat >= t.start && currentBeat < t.end, past = currentBeat >= t.end
             return (
               <button key={t.n} type="button" aria-label={t.label} aria-pressed={now} onClick={() => seekTo(t.start)} style={{
-                flex: 1, minWidth: 0, height: 30, padding: 0, border: 'none', borderRadius: 6, fontSize: 11, fontWeight: now ? 800 : 600,
+                flex: 1, minWidth: 0, height: 20, padding: 0, border: 'none', borderRadius: 5, fontSize: 10, fontWeight: now ? 800 : 600,
                 marginLeft: !perPhrase && (t.n - 1) % 4 === 0 && t.n > 1 ? 8 : 2,
                 ...(now ? { background: '#FFFFFF', color: INK } : past ? { background: '#48484A', color: '#E5E5EA' } : { background: '#2C2C2E', color: '#8E8E93' }),
               }}>{t.n}</button>
             )
           })}
         </div>
-        <span style={{ flex: 'none', fontSize: 12, fontWeight: 600, color: '#C7C7CC', whiteSpace: 'nowrap' }}>{perPhrase ? `Phrase ${Math.min(items.length, items.findIndex(t => currentBeat < t.end) + 1 || items.length)} / ${items.length}` : `Mes. ${cur} / ${total}`}</span>
+        <span style={{ flex: 'none', fontSize: 11, fontWeight: 600, color: '#C7C7CC', whiteSpace: 'nowrap' }}>{perPhrase ? `Phrase ${Math.min(items.length, items.findIndex(t => currentBeat < t.end) + 1 || items.length)} / ${items.length}` : `Mes. ${cur} / ${total}`}</span>
       </div>
     </div>
   )

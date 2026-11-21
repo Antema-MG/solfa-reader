@@ -13,6 +13,14 @@ export function normalizedText(text: string): string | null {
   return r.success ? editModelToText(scoreToEditModel(r.file)) : null
 }
 
+/** Normalised text + title of a valid score, or null. */
+export function describeScore(text: string): { norm: string; title: string } | null {
+  const r = parseMsolfa(text)
+  if (!r.success) return null
+  const t = r.file.metadata.title
+  return { norm: editModelToText(scoreToEditModel(r.file)), title: t && t !== '-' ? t : '' }
+}
+
 /** Catalog path of the bundled file that holds exactly this score, if any. */
 export function catalogPathFor(normalized: string): string | null {
   return Object.entries(CATALOG_RAW).find(([, t]) => normalizedText(t) === normalized)?.[0] ?? null

@@ -13,7 +13,7 @@ import LandscapeChoir from './components/Shell/LandscapeChoir'
 import { useLandscape, useWide } from './components/Shell/ui'
 import RecordChoir from './components/Choir/RecordChoir'
 import { LandscapePlayer } from './components/Shell/LandscapePlayer'
-import ReadSettings from './components/Shell/ReadSettings'
+import ReadingView from './components/Shell/ReadingView'
 import { ChoirPanel, ChoirView, ListenView, ScoreScreen, useMySound } from './components/Shell/Views'
 
 const DEGREE_KEYS = new Set(['d', 'r', 'm', 'f', 's', 'l', 't'])
@@ -153,7 +153,7 @@ function Root() {
 function LandscapeRoot() {
   const [view, setView] = useState<View>('listen')
   const { openFile } = usePlayer()
-  const { editNew } = useEditor()
+  const { editNew, isEditing } = useEditor()
   const lib = useLibrary()
   const [draft, setDraft] = useState<Draft | null>(null)
   const [recording, setRecording] = useState(false)
@@ -161,11 +161,10 @@ function LandscapeRoot() {
   const active = view === 'editor' ? 'library' : view
   // Reading the score (Écoute / Partition): rail, header and transport hidden by default, so only the score shows.
   const reading = view === 'listen' || view === 'score'
-  const bare = reading && !chromeL
+  const bare = reading && !chromeL && !isEditing
   return (
     <div style={{ position: 'relative', display: 'flex', height: '100dvh', background: 'var(--bg)' }}>
       <GlobalBehaviours onOpened={() => setView('listen')} />
-      {bare && <ReadSettings onShowAll={() => set('chromeL', true)} />}
       {!bare && <nav aria-label="Navigation" style={{
         flex: 'none', width: 'calc(64px + env(safe-area-inset-left))', boxSizing: 'border-box', padding: '6px 0', paddingLeft: 'env(safe-area-inset-left)',
         display: 'flex', flexDirection: 'column', justifyContent: 'center', background: 'rgba(249,249,251,0.96)', borderRight: '1px solid #E5E5EA',
@@ -189,8 +188,8 @@ function LandscapeRoot() {
       <main style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column', paddingRight: 'env(safe-area-inset-right)' }}>
         {view === 'library' && <CatalogView landscape onOpen={text => { openFile(text); setView('listen') }} onRead={text => { openFile(text); setView('score') }} onFix={d => { setDraft(d); setView('editor') }}
           onCreate={(text, id) => { openFile(text); editNew(id); setView('score') }} />}
-        {view === 'listen' && <LandscapePlayer withPiano onRecord={() => setRecording(true)} />}
-        {view === 'score' && <LandscapePlayer withPiano={false} />}
+        {view === 'listen' && (bare ? <ReadingView dense onExit={() => set('chromeL', true)} /> : <LandscapePlayer withPiano onRecord={() => setRecording(true)} />)}
+        {view === 'score' && (bare ? <ReadingView dense onExit={() => set('chromeL', true)} /> : <LandscapePlayer withPiano={false} />)}
         {view === 'choir' && <LandscapeChoir onRecord={() => setRecording(true)} />}
         {view === 'learn' && <MethodView />}
         {view === 'editor' && draft && (
@@ -246,7 +245,7 @@ function DesktopRoot() {
             <rect x="3" y="4" width="18" height="16" rx="2" /><path d="M9 4v16" />{library && <path d="M6.5 9v6" />}
           </svg>
         </button>
-        <span style={{ fontSize: 17, fontWeight: 800 }}>Msolfa</span>
+        <span style={{ fontSize: 17, fontWeight: 800 }}>Antema Fi</span>
         <nav aria-label="Navigation" style={{ display: 'flex', padding: 2, borderRadius: 10, background: '#E8E8ED' }}>
           {DESKTOP_TABS.map(t => (
             <button key={t.id} type="button" aria-current={active === t.id ? 'page' : undefined} onClick={() => setView(t.id)} style={{
@@ -345,9 +344,11 @@ function useMobileNav(initial: View) {
 function MobileRoot() {
   const { view, from, go: setView, back: goBack } = useMobileNav('library')
   const { openFile } = usePlayer()
-  const { editNew } = useEditor()
+  const { editNew, isEditing } = useEditor()
+  const { readP, set } = usePrefs()
   const lib = useLibrary()
   const [draft, setDraft] = useState<Draft | null>(null)
+  const bare = readP && !isEditing && (view === 'listen' || view === 'score')   // reading mode: score + slim icon row only
   const goListen = () => setView('listen')
   const goLibrary = () => setView('library')
   const back = { label: VIEW_LABEL[from && from !== view ? from : 'library'], go: goBack }
@@ -363,13 +364,14 @@ function MobileRoot() {
             openFile(text); goListen()
           }} />
         )}
-        {view === 'listen'  && <ListenView goLibrary={goLibrary} back={back} />}
-        {view === 'score'   && <ScoreScreen goLibrary={goLibrary} goListen={goListen} back={back} />}
+        {bare && <ReadingView onExit={() => set('readP', false)} />}
+        {!bare && view === 'listen'  && <ListenView goLibrary={goLibrary} back={back} />}
+        {!bare && view === 'score'   && <ScoreScreen goLibrary={goLibrary} goListen={goListen} back={back} />}
         {view === 'choir'   && <ChoirView goLibrary={goLibrary} back={back} />}
         {view === 'learn'   && <MethodView />}
       </main>
       {view === 'library' && <MiniBar onOpen={goListen} />}
-      <BottomNav view={view} setView={setView} />
+      {!bare && <BottomNav view={view} setView={setView} />}
     </div>
   )
 }

@@ -14,8 +14,8 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       manifest: {
-        name: 'Msolfa Player',
-        short_name: 'Msolfa',
+        name: 'Antema Fi',
+        short_name: 'Antema Fi',
         description: 'Lecteur et éditeur de partitions .msolfa',
         theme_color: '#1e1e2e',
         icons: [

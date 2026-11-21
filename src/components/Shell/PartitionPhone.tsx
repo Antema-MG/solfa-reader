@@ -1,16 +1,16 @@
 import { useEffect, useState } from 'react'
-import type { Voice } from '../../types'
 import { usePlayer } from '../../state/PlayerContext'
 import { usePrefs, type FontSize } from '../../state/PrefsContext'
 import PhraseList from '../Score/PhraseList'
 import RhythmToolbar from '../Editor/RhythmToolbar'
+import { ReadBar, ReadToggle } from './ReadingView'
 import { useEditor } from '../../state/EditorContext'
-import { ACCENT, INK, IosSwitch, PauseIcon, PlayIcon, TEXT2, VCOLOR, VOICES, useTonicLabel } from './controls'
+import { ACCENT, INK, IosSwitch, TEXT2, useTonicLabel } from './controls'
 
-/** Phone portrait "Partition" (Partition.dc.html): title + ⋯ · voice chips · phrase cards · "Mesure N" bar. */
+/** Phone portrait "Partition": title + ⋯ · phrase cards · the same slim icon row as the reading mode. */
 export default function PartitionPhone({ onEdit, goListen, goLibrary }: { onEdit: () => void; goListen?: () => void; goLibrary?: () => void }) {
-  const { score, currentBeat, isPlaying, play, pause, tempo } = usePlayer()
-  const { shown, myVoice, zoom, fontSize, lyrics, set } = usePrefs()
+  const { score, tempo } = usePlayer()
+  const { zoom, fontSize, lyrics, set } = usePrefs()
   const { isEditing } = useEditor()
   const tonLabel = useTonicLabel()
   const [menu, setMenu] = useState(false)
@@ -31,11 +31,6 @@ export default function PartitionPhone({ onEdit, goListen, goLibrary }: { onEdit
   }
   const m = score.metadata
   const title = m.title && m.title !== '-' ? m.title : 'Sans titre'
-  const measure = Math.min(score.measures.length, Math.floor(currentBeat / score.beatsPerMeasure) + 1)
-  const toggleVoice = (v: Voice) => {
-    const n = { ...shown, [v]: !shown[v] }
-    if (VOICES.some(x => n[x])) set('shown', n)
-  }
   const step = (d: number) => set('zoom', Math.min(160, Math.max(60, zoom + d)))
   const fs = (i: FontSize, px: number) => {
     const on = fontSize === i
@@ -54,38 +49,17 @@ export default function PartitionPhone({ onEdit, goListen, goLibrary }: { onEdit
             <span style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-0.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{title}</span>
             <span style={{ fontSize: 12, color: TEXT2 }}>do = {tonLabel} · {m.numerator}/{m.denominator} · {tempo} BPM</span>
           </div>
+          <ReadToggle />
           <button type="button" aria-label="Affichage" aria-haspopup="dialog" aria-expanded={menu} onClick={() => setMenu(o => !o)}
             style={{ flex: 'none', width: 44, height: 44, borderRadius: 22, border: 'none', background: menu ? INK : '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <svg width="22" height="22" viewBox="0 0 24 24" fill={menu ? '#FFFFFF' : INK} aria-hidden="true"><circle cx="5" cy="12" r="1.8" /><circle cx="12" cy="12" r="1.8" /><circle cx="19" cy="12" r="1.8" /></svg>
           </button>
         </div>
-        {!isEditing && <div role="group" aria-label="Voix affichées" style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-          {VOICES.map(v => {
-            const on = shown[v]
-            return (
-              <button key={v} type="button" aria-pressed={on} onClick={() => toggleVoice(v)} style={{
-                height: 32, padding: '0 12px', borderRadius: 16, fontSize: 13, fontWeight: 700,
-                ...(on ? { border: 'none', background: VCOLOR[v], color: '#FFFFFF' } : { border: '1px solid #C7C7CC', background: 'transparent', color: TEXT2 }),
-              }}>{v === myVoice ? `${v} · ma voix` : v}</button>
-            )
-          })}
-        </div>}
       </header>
 
       <PhraseList editable={isEditing} />
 
-      {isEditing ? <RhythmToolbar /> : <div role="button" tabIndex={0} aria-label="Ouvrir le lecteur" onClick={goListen} onKeyDown={e => { if (e.key === 'Enter') goListen?.() }} style={{
-        flex: 'none', margin: '8px 10px', height: 52, borderRadius: 14, background: INK, color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: 10, padding: '0 6px 0 16px', cursor: goListen ? 'pointer' : 'default',
-      }}>
-        <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-          <span style={{ fontSize: 14, fontWeight: 600 }}>Mesure {measure} — {isPlaying ? 'en lecture' : 'en pause'}</span>
-          <span style={{ fontSize: 12, color: '#C7C7CC' }}>Toucher une mesure pour y aller</span>
-        </span>
-        <button type="button" aria-label={isPlaying ? 'Pause' : 'Lecture'} onClick={e => { e.stopPropagation(); isPlaying ? pause() : play() }}
-          style={{ width: 44, height: 44, border: 'none', background: 'transparent', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {isPlaying ? <PauseIcon size={22} /> : <PlayIcon size={22} />}
-        </button>
-      </div>}
+      {isEditing ? <RhythmToolbar /> : <ReadBar play />}
 
       {menu && <>
         <button type="button" aria-label="Fermer" tabIndex={-1} onClick={() => setMenu(false)} style={{ position: 'fixed', inset: 0, zIndex: 40, border: 'none', background: 'transparent' }} />
