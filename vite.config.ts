@@ -4,6 +4,8 @@ import { VitePWA } from 'vite-plugin-pwa'
 import { catalogWriter } from './tools/catalogWriter'
 
 export default defineConfig({
+  // GitHub Pages serves the site under /<repo>/ : CI sets BASE_PATH, local dev stays on '/'.
+  base: process.env.BASE_PATH || '/',
   // ngrok tunnels for testing on a phone (leading dot = any subdomain, survives new tunnel URLs).
   server: { allowedHosts: ['.ngrok-free.dev', '.ngrok-free.app'] },
   plugins: [

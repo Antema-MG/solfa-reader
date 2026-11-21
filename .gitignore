@@ -1,2 +1,5 @@
 *.CMD
 /node_modules
+
+# build output (CI builds and deploys it)
+/dist
